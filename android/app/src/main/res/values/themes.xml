@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema base de la aplicación. El estilo define solo el fondo/estado;
+         la UI se construye con Jetpack Compose (Material 3). -->
+    <style name="Theme.SistemaAsistencias" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#1E3A8A</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
