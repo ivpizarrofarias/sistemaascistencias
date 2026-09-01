@@ -114,3 +114,4 @@ La base URL de la API está en
 - CRUD de empleados, asistencia (admin), permisos (admin/empleado) y
   liquidaciones (admin) según las reglas de negocio del sistema.
 # sistemaascistencias
+# sistemaascistencias
