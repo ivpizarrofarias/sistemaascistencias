@@ -4,94 +4,62 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.ipfsoft.backend.app.data.ApiService
 import cl.ipfsoft.backend.app.data.AuthResponse
-import cl.ipfsoft.backend.app.data.AttendanceResponse
-import cl.ipfsoft.backend.app.data.LiquidacionResponse
 import cl.ipfsoft.backend.app.data.LoginRequest
 import cl.ipfsoft.backend.app.data.MarkRequest
-import cl.ipfsoft.backend.app.data.MarkResponse
-import cl.ipfsoft.backend.app.data.PermisoLaboralResponse
 import cl.ipfsoft.backend.app.data.TokenStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-/**
- * Estado de la interfaz de la app.
- */
-data class UiState(
-    val isLoading: Boolean = false,
-    val error: String? = null,
-
-    // Sesión
-    val isAuthenticated: Boolean = false,
-    val username: String? = null,
-    val role: String? = null,
-    val employeeId: Long? = null,
-    val fullName: String? = null,
-
-    // Marcaje
-    val markResult: MarkResponse? = null,
-
-    // Datos del empleado
-    val attendances: List<AttendanceResponse> = emptyList(),
-    val permisos: List<PermisoLaboralResponse> = emptyList(),
-    val liquidaciones: List<LiquidacionResponse> = emptyList(),
-)
-
-/**
- * ViewModel principal que orquesta el marcaje público y la sesión del empleado.
- */
 class MainViewModel(
     private val api: ApiService,
     private val tokenStore: TokenStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState())
-    val state: StateFlow<UiState> = _state.asStateFlow()
+    val state: StateFlow<UiState> = _state
 
-    /** Restaura la sesión guardada (si existe) al iniciar la app. */
+    /** Intenta restaurar la sesión guardada localmente al iniciar la app. */
     fun restoreSession() {
         viewModelScope.launch {
-            val auth = tokenStore.session.firstOrNull() ?: return@launch
-            _state.value = _state.value.copy(
-                isAuthenticated = true,
-                username = auth.username,
-                role = auth.role,
-                employeeId = auth.employeeId,
-                fullName = auth.fullName,
-            )
-            auth.employeeId?.let { loadEmployeeData(auth.token, it) }
-        }
-    }
-
-    /** Inicia sesión con las credenciales y guarda la sesión. */
-    fun login(username: String, password: String) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
-            try {
-                val auth: AuthResponse = api.login(LoginRequest(username, password))
-                tokenStore.saveSession(auth)
+            val token = tokenStore.token.first()
+            if (token != null) {
                 _state.value = _state.value.copy(
-                    isLoading = false,
+                    token = token,
                     isAuthenticated = true,
-                    username = auth.username,
-                    role = auth.role,
-                    employeeId = auth.employeeId,
-                    fullName = auth.fullName,
                 )
-                auth.employeeId?.let { loadEmployeeData(auth.token, it) }
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "Error al iniciar sesión",
-                )
+                val auth = AuthResponse(token, null, null, null, null)
+                loadEmployeeData(auth)
             }
         }
     }
 
-    /** Cierra la sesión y borra el token guardado. */
+    /** Inicia sesión con usuario y contraseña. */
+    fun login(username: String, password: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            try {
+                val auth = api.login(LoginRequest(username, password))
+                tokenStore.saveSession(auth)
+                _state.value = _state.value.copy(
+                    token = auth.token,
+                    username = auth.username,
+                    role = auth.role,
+                    employeeId = auth.employeeId,
+                    fullName = auth.fullName,
+                    isAuthenticated = true,
+                    isLoading = false,
+                    error = null,
+                )
+                loadEmployeeData(auth)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, error = mensajeError(e))
+            }
+        }
+    }
+
+    /** Cierra la sesión y borra el token local. */
     fun logout() {
         viewModelScope.launch {
             tokenStore.clear()
@@ -99,57 +67,56 @@ class MainViewModel(
         }
     }
 
-    /** Marca el siguiente paso del día usando el RUT (endpoint público). */
-    fun mark(rut: String) {
+    /** Realiza el marcaje del trabajador por su código (RUT). */
+    fun mark(code: String) {
+        viewModelScope.launch {
+            _state.value = _state.value.copy(isLoading = true, error = null, markResult = null)
+            try {
+                val res = api.mark(MarkRequest(code))
+                _state.value = _state.value.copy(markResult = res, isLoading = false, error = null)
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(isLoading = false, error = mensajeError(e))
+            }
+        }
+    }
+
+    /** Consulta el estado actual de marcaje (sin registrar). */
+    fun status(code: String) {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true, error = null)
             try {
-                val result = api.mark(MarkRequest(rut))
-                _state.value = _state.value.copy(isLoading = false, markResult = result)
+                val res = api.status(MarkRequest(code))
+                _state.value = _state.value.copy(markResult = res, isLoading = false, error = null)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "No se pudo registrar la marca",
-                )
+                _state.value = _state.value.copy(isLoading = false, error = mensajeError(e))
             }
         }
     }
 
-    /** Consulta el estado actual del marcaje del día (endpoint público). */
-    fun status(rut: String) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
-            try {
-                val result = api.status(MarkRequest(rut))
-                _state.value = _state.value.copy(isLoading = false, markResult = result)
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    error = e.message ?: "No se pudo consultar el estado",
-                )
-            }
+    /** Carga asistencias, permisos y liquidaciones del empleado autenticado. */
+    private suspend fun loadEmployeeData(auth: AuthResponse) {
+        val empId = auth.employeeId ?: _state.value.employeeId ?: return
+        try {
+            val attendances = api.listAttendances(empId, null, null)
+            val permisos = api.listPermisos(empId, null, null)
+            val liquidaciones = api.listLiquidaciones(empId)
+            _state.value = _state.value.copy(
+                employeeId = empId,
+                attendances = attendances,
+                permisos = permisos,
+                liquidaciones = liquidaciones,
+                error = null,
+            )
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = mensajeError(e))
         }
     }
 
-    /** Carga las asistencias, permisos y liquidaciones del empleado autenticado. */
-    fun loadEmployeeData(token: String, employeeId: Long) {
-        viewModelScope.launch {
-            try {
-                val attendances = api.myAttendance("Bearer $token", employeeId)
-                val permisos = api.myPermisos("Bearer $token", employeeId)
-                val liquidaciones = api.myLiquidaciones("Bearer $token", employeeId)
-                _state.value = _state.value.copy(
-                    attendances = attendances,
-                    permisos = permisos,
-                    liquidaciones = liquidaciones,
-                )
-            } catch (e: Exception) {
-                _state.value = _state.value.copy(error = e.message ?: "No se pudieron cargar sus datos")
-            }
+    private fun mensajeError(e: Exception): String =
+        when (e) {
+            is retrofit2.HttpException -> "Error del servidor (${e.code()})"
+            is java.net.UnknownHostException -> "No se pudo conectar al servidor"
+            is java.net.ConnectException -> "No se pudo conectar al servidor"
+            else -> e.message ?: "Error desconocido"
         }
-    }
-
-    fun clearError() {
-        _state.value = _state.value.copy(error = null)
-    }
 }

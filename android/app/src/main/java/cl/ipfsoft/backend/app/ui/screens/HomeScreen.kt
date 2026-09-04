@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,6 +34,7 @@ import cl.ipfsoft.backend.app.ui.UiState
  * Panel principal del empleado autenticado: consulta sus asistencias, permisos
  * y liquidaciones mediante pestañas.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     state: UiState,
@@ -94,16 +96,14 @@ private fun AsistenciaTab(attendances: List<AttendanceResponse>) {
             ) {
                 Text(a.date, modifier = Modifier.weight(1f))
                 Text(a.entryTime?.take(5) ?: "-")
-                Spacer(Modifier.height(0.dp))
                 Text(a.exitTime?.take(5) ?: "-", modifier = Modifier.padding(start = 12.dp))
-                Spacer(Modifier.weight(1f))
                 val estado = when {
                     a.absence -> "Ausente"
                     a.medicalLicense -> "Licencia"
                     a.complete -> "Completo"
                     else -> "Incompleto"
                 }
-                Text(estado, style = MaterialTheme.typography.labelMedium)
+                Text(estado, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 8.dp))
             }
             HorizontalDivider()
         }
@@ -120,7 +120,7 @@ private fun PermisosTab(permisos: List<PermisoLaboralResponse>) {
         items(permisos) { p ->
             Column(Modifier.padding(vertical = 8.dp)) {
                 Text("${p.date} · ${tipoPermiso(p)}", fontWeight = FontWeight.Bold)
-                Text(p.motivo)
+                Text(p.motivo ?: "")
                 Text("Estado: ${p.estado}", style = MaterialTheme.typography.bodySmall)
             }
             HorizontalDivider()
@@ -149,10 +149,15 @@ private fun LiquidacionesTab(liquidaciones: List<LiquidacionResponse>) {
     }
 }
 
-private fun tipoPermiso(p: PermisoLaboralResponse): String =
-    if (p.tipo == "POR_HORA") "Por horas (${p.horas} h)" else "Por día (${p.dias} día/s)"
+private fun tipoPermiso(p: PermisoLaboralResponse): String {
+    val cant = p.horas?.takeIf { p.tipo == "POR_HORA" }?.let { "${it}h" }
+        ?: p.dias.takeIf { p.tipo == "POR_DIA" }?.let { "${it} día/s" }
+        ?: ""
+    return if (p.tipo == "POR_HORA") "Por horas (${cant})" else "Por día (${cant})"
+}
 
-private fun moneda(valor: Double): String {
+private fun moneda(valor: Double?): String {
+    if (valor == null) return "-"
     val formato = java.text.NumberFormat.getCurrencyInstance(java.util.Locale("es", "CL"))
     return formato.format(valor)
 }

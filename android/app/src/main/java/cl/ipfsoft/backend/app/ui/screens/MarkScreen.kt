@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,8 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import cl.ipfsoft.backend.app.ui.UiState
 import cl.ipfsoft.backend.app.data.MarkResponse
+import cl.ipfsoft.backend.app.ui.UiState
 
 /**
  * Pantalla de marcaje (kiosco).
@@ -99,7 +98,7 @@ fun MarkScreen(
                         Button(
                             onClick = { onMark(rut) },
                             enabled = rut.isNotBlank() && !state.isLoading,
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(if (state.isLoading) "Registrando..." else "Marcar")
                         }

@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Manifesto de la aplicación Android. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permiso para acceder a Internet (necesario para consumir la API del backend). -->
+    <!-- Acceso a internet para consumir la API REST del backend. -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
+        android:icon="@drawable/ic_launcher"
+        android:allowBackup="true"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SistemaAsistencias"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        android:theme="@style/Theme.SistemaAsistencias">
 
         <activity
             android:name=".MainActivity"

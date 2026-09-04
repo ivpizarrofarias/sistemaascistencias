@@ -2,51 +2,53 @@ package cl.ipfsoft.backend.app.data
 
 import retrofit2.http.Body
 import retrofit2.http.GET
-import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
 
 /**
- * Definición de los endpoints de la API que consume la app móvil.
- *
- * La app se centra en el trabajo principal del trabajador:
- *  - Marcaje público por RUT (kiosco).
- *  - Consulta del estado del día.
- *  - Login del empleado.
- *  - Mis asistencias, mis permisos y mis liquidaciones (con token).
+ * Interfaces Retrofit que mapean los endpoints REST del backend Spring Boot.
  */
-
 interface ApiService {
+    // ----- Autenticación -----
+    @POST("api/auth/login")
+    suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    // ---- Endpoints PÚBLICOS (marcaje por RUT) ----
-
+    // ----- Marcaje (kiosco, público) -----
     @POST("api/attendance/mark")
-    suspend fun mark(@Body body: MarkRequest): MarkResponse
+    suspend fun mark(@Body request: MarkRequest): MarkResponse
 
     @POST("api/attendance/status")
-    suspend fun status(@Body body: MarkRequest): MarkResponse
+    suspend fun status(@Body request: MarkRequest): MarkResponse
 
-    // ---- Endpoints AUTENTICADOS (token JWT) ----
-
-    @POST("api/auth/login")
-    suspend fun login(@Body body: LoginRequest): AuthResponse
-
+    // ----- Asistencias del empleado -----
     @GET("api/attendance/employee/{employeeId}")
-    suspend fun myAttendance(
-        @Header("Authorization") token: String,
-        @Path("employeeId") employeeId: Long
+    suspend fun listAttendances(
+        @Path("employeeId") employeeId: Long,
+        @Query("from") from: String?,
+        @Query("to") to: String?,
     ): List<AttendanceResponse>
 
+    // ----- Permisos laborales -----
     @GET("api/permisos/employee/{employeeId}")
-    suspend fun myPermisos(
-        @Header("Authorization") token: String,
-        @Path("employeeId") employeeId: Long
+    suspend fun listPermisos(
+        @Path("employeeId") employeeId: Long,
+        @Query("from") from: String?,
+        @Query("to") to: String?,
     ): List<PermisoLaboralResponse>
 
+    // ----- Liquidaciones -----
     @GET("api/payroll/liquidaciones/employee/{employeeId}")
-    suspend fun myLiquidaciones(
-        @Header("Authorization") token: String,
-        @Path("employeeId") employeeId: Long
-    ): List<LiquidacionResponse>
+    suspend fun listLiquidaciones(@Path("employeeId") employeeId: Long): List<LiquidacionResponse>
 }
+
+/** Cuerpo de la petición de login. */
+data class LoginRequest(
+    val username: String,
+    val password: String,
+)
+
+/** Cuerpo de la petición de marcaje: solo el código del trabajador. */
+data class MarkRequest(
+    val code: String,
+)
