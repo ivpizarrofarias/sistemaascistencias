@@ -1,74 +1,134 @@
 package cl.ipfsoft.backend.util;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Pruebas unitarias del generador de código de marcaje.
  *
- * El código base está formado por los 4 primeros dígitos del RUT + las primeras
- * 4 letras del nombre de pila (normalizado, sin acentos), en MAYÚSCULAS.
+ * El código es un número aleatorio de 4 dígitos (1000-9999), único en el sistema
+ * e inmutable: no se deriva del RUT ni del nombre, justamente para que no se
+ * pueda adivinar el de un compañero ni cambie al corregir el RUT.
  */
 class CodeGeneratorTest {
 
     @Test
-    void baseCode_rutYNombre_componentesCorrectos() {
-        // RUT 12345678-5 -> "1234"; FRANCISCA -> primeras 4 letras "FRAN" => "1234FRAN".
-        assertEquals("1234FRAN", CodeGenerator.baseCode("12345678-5", "FRANCISCA"));
+    @DisplayName("El código tiene 4 dígitos")
+    void uniqueCode_tieneCuatroDigitos() {
+        for (int i = 0; i < 500; i++) {
+            assertTrue(CodeGenerator.esCodigoValido(CodeGenerator.uniqueCode(s -> false)),
+                    "El código debe tener 4 dígitos");
+        }
     }
 
     @Test
-    void baseCode_nombreDeCuatroLetras() {
-        // JUAN tiene exactamente 4 letras -> se usa el nombre completo.
-        assertEquals("1111JUAN", CodeGenerator.baseCode("11111111-1", "Juan"));
+    @DisplayName("El código siempre está entre 1000 y 9999")
+    void uniqueCode_enElRangoValido() {
+        for (int i = 0; i < 500; i++) {
+            int n = Integer.parseInt(CodeGenerator.uniqueCode(s -> false));
+            assertTrue(n >= 1000 && n <= 9999, "El código debe estar entre 1000 y 9999, fue " + n);
+        }
     }
 
     @Test
-    void baseCode_nombreLargo_cortaEnCuatroLetras() {
-        // VERONICA -> "VERO" (primeras 4 letras).
-        assertEquals("1234VERO", CodeGenerator.baseCode("12345678-5", "Veronica"));
-        // SEBASTIAN -> "SEBA".
-        assertEquals("1234SEBA", CodeGenerator.baseCode("12345678-5", "Sebastian"));
+    @DisplayName("El código no depende del RUT ni del nombre")
+    void uniqueCode_noDependeDelRutNiDelNombre() {
+        // Dos empleados con RUT y nombre distintos pueden (deben) recibir códigos distintos.
+        String a = CodeGenerator.uniqueCode(s -> false);
+        String b = CodeGenerator.uniqueCode(s -> false);
+        assertNotEquals(a, b, "Cada empleado debe recibir un código propio");
     }
 
     @Test
-    void baseCode_ignoraPuntosGuionesYDv() {
-        // El RUT puede venir con puntos y guion; solo se toman los primeros 4 dígitos.
-        assertEquals("1111JUAN", CodeGenerator.baseCode("11.111.111-1", "Juan"));
+    @DisplayName("El código no es predecible a partir del RUT")
+    void uniqueCode_noSeDeduceDelRut() {
+        // Ninguna porción del código debe coincidir con el prefijo del RUT,
+        // porque el código se elige al azar y no se deriva de los datos del empleado.
+        for (int i = 0; i < 200; i++) {
+            String codigo = CodeGenerator.uniqueCode(s -> false);
+            assertNotEquals("1687", codigo, "El código no debe ser el prefijo del RUT");
+        }
     }
 
     @Test
-    void baseCode_sinAcentos_TildesIgnoradas() {
-        // MARIA (con tilde) se normaliza -> "MARI".
-        assertEquals("1234MARI", CodeGenerator.baseCode("12345678-5", "María"));
+    @DisplayName("El código nunca se repite si ya está en uso")
+    void uniqueCode_omiteLosUsados() {
+        List<String> usados = new ArrayList<>(List.of("1000", "1001", "1002", "4832"));
+
+        for (int i = 0; i < 200; i++) {
+            String codigo = CodeGenerator.uniqueCode(usados::contains);
+            assertFalse(usados.contains(codigo), "El código " + codigo + " ya estaba en uso");
+            usados.add(codigo);
+        }
+
+        assertEquals(204, usados.size(), "No debe perderse ningún código generado");
     }
 
     @Test
-    void baseCode_soloDigitosDelRut_sinPuntosNiDv() {
-        // Se toman solo los primeros 4 dígitos (ignorando puntos, guiones y el DV).
-        assertEquals("1234JUAN", CodeGenerator.baseCode("12.345.678-5", "Juan"));
-        assertEquals("9999JUAN", CodeGenerator.baseCode("99999999-K", "Juan"));
+    @DisplayName("Con la tabla casi llena igual encuentra un código libre")
+    void uniqueCode_casiLlenoEncuentraUnLibre() {
+        // Solo queda libre el 9999.
+        List<String> usados = new ArrayList<>();
+        for (int n = 1000; n <= 9998; n++) {
+            usados.add(String.valueOf(n));
+        }
+
+        assertEquals("9999", CodeGenerator.uniqueCode(usados::contains));
     }
 
     @Test
-    void baseCode_inputMinusculas_devuelveMayusculas() {
-        // El código final siempre va en MAYÚSCULAS aunque se ingrese en minúsculas.
-        assertEquals("1556IVAN", CodeGenerator.baseCode("1556XXXX-K", "ivan"));
+    @DisplayName("Si no queda ningún código libre, avisa en vez de devolver uno repetido")
+    void uniqueCode_sinCodigosLibres_lanzaExcepcion() {
+        List<String> usados = new ArrayList<>();
+        for (int n = 1000; n <= 9999; n++) {
+            usados.add(String.valueOf(n));
+        }
+
+        assertThrows(IllegalStateException.class, () -> CodeGenerator.uniqueCode(usados::contains));
     }
 
     @Test
-    void uniqueCode_sinColision_devuelveBase() {
-        assertEquals("1111JUAN", CodeGenerator.uniqueCode("11111111-1", "Juan", s -> false));
+    @DisplayName("Mil códigos generados son todos distintos")
+    void uniqueCode_milCodigosTodosDistintos() {
+        Set<String> generados = new HashSet<>();
+        List<String> usados = new ArrayList<>();
+
+        for (int i = 0; i < 1000; i++) {
+            usados.add(CodeGenerator.uniqueCode(usados::contains));
+        }
+        generados.addAll(usados);
+
+        assertEquals(1000, generados.size(), "Los 1000 códigos deben ser distintos entre sí");
     }
 
     @Test
-    void uniqueCode_conColision_agregaSufijo() {
-        // El código base ya está en uso -> se agrega sufijo 2, luego 3, etc.
-        assertEquals("1111JUAN2", CodeGenerator.uniqueCode("11111111-1", "Juan", s -> s.equals("1111JUAN")));
-        assertEquals("1111JUAN3",
-                CodeGenerator.uniqueCode("11111111-1", "Juan", s -> s.equals("1111JUAN") || s.equals("1111JUAN2")));
+    @DisplayName("esCodigoValido acepta solo 4 dígitos")
+    void esCodigoValido_soloCuatroDigitos() {
+        assertTrue(CodeGenerator.esCodigoValido("1234"));
+        assertTrue(CodeGenerator.esCodigoValido(" 1234 "), "Tolera espacios al teclear");
+
+        assertFalse(CodeGenerator.esCodigoValido("123"), "3 dígitos no sirve");
+        assertFalse(CodeGenerator.esCodigoValido("12345"), "5 dígitos no sirve");
+        assertFalse(CodeGenerator.esCodigoValido("1687JAVI"), "El formato anterior con letras ya no es válido");
+        assertFalse(CodeGenerator.esCodigoValido("12a4"));
+        assertFalse(CodeGenerator.esCodigoValido(null));
+        assertFalse(CodeGenerator.esCodigoValido(""));
+    }
+
+    @Test
+    @DisplayName("randomCode no necesita base de datos")
+    void randomCode_funcionaSinPredicate() {
+        assertTrue(CodeGenerator.esCodigoValido(CodeGenerator.randomCode()));
     }
 }

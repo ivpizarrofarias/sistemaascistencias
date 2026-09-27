@@ -2,15 +2,15 @@ package cl.ipfsoft.backend.mapper;
 
 import cl.ipfsoft.backend.dto.attendance.AttendanceResponse;
 import cl.ipfsoft.backend.dto.attendance.MarkResponse;
-import cl.ipfsoft.backend.entity.Attendance;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Asistencia;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.util.RutUtils;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AttendanceMapper {
 
-    public MarkResponse toMarkResponse(Attendance a) {
+    public MarkResponse toMarkResponse(Asistencia a) {
         String message = a.isComplete()
                 ? "Jornada completa. No puede seguir marcando hoy."
                 : switch (a.getNextStep()) {
@@ -23,7 +23,7 @@ public class AttendanceMapper {
                 a.getEmployee().getId(),
                 a.getEmployee().getFullName(),
                 a.getDate(),
-                a.getNextStep() != null ? cl.ipfsoft.backend.entity.MarkStep.valueOf(a.getNextStep()) : null,
+                a.getNextStep() != null ? cl.ipfsoft.backend.entity.PasoMarcaje.valueOf(a.getNextStep()) : null,
                 a.getEntryTime(),
                 a.getColacionSalida1(),
                 a.getColacionEntrada1(),
@@ -38,8 +38,8 @@ public class AttendanceMapper {
         );
     }
 
-    public AttendanceResponse toResponse(Attendance a) {
-        Employee e = a.getEmployee();
+    public AttendanceResponse toResponse(Asistencia a) {
+        Empleado e = a.getEmployee();
         return new AttendanceResponse(
                 a.getId(),
                 e.getId(),

@@ -1,7 +1,7 @@
 package cl.ipfsoft.backend.repository;
 
 import cl.ipfsoft.backend.entity.Liquidacion;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Empleado;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,5 +15,5 @@ public interface LiquidacionRepository extends JpaRepository<Liquidacion, Long> 
 
     boolean existsByEmployeeIdAndPeriodYearAndPeriodMonth(Long employeeId, int year, int month);
 
-    Optional<Liquidacion> findTopByEmployeeOrderByPeriodYearDescPeriodMonthDesc(Employee employee);
+    Optional<Liquidacion> findTopByEmployeeOrderByPeriodYearDescPeriodMonthDesc(Empleado employee);
 }

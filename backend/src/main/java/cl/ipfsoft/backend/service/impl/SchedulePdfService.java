@@ -1,7 +1,7 @@
 package cl.ipfsoft.backend.service.impl;
 
-import cl.ipfsoft.backend.entity.ScheduleDay;
-import cl.ipfsoft.backend.entity.WeeklySchedule;
+import cl.ipfsoft.backend.entity.DiaHorario;
+import cl.ipfsoft.backend.entity.HorarioSemanal;
 import com.lowagie.text.Document;
 import com.lowagie.text.DocumentException;
 import com.lowagie.text.Element;
@@ -48,7 +48,7 @@ public class SchedulePdfService {
     }
 
     /** Genera el PDF (bytes) del horario semanal indicado. */
-    public byte[] generatePdf(WeeklySchedule ws) {
+    public byte[] generatePdf(HorarioSemanal ws) {
         Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
         Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
         Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
@@ -104,11 +104,11 @@ public class SchedulePdfService {
             celda(tabla, "ENTRADA", boldFont, Rectangle.BOX);
             celda(tabla, "SALIDA", boldFont, Rectangle.BOX);
 
-            List<ScheduleDay> dias = ws.getDays();
+            List<DiaHorario> dias = ws.getDays();
             for (int i = 0; i < 6; i++) {
                 int dayNumber = i + 1;
                 LocalDate fecha = inicio.plusDays(i);
-                ScheduleDay day = diaDe(dias, dayNumber);
+                DiaHorario day = diaDe(dias, dayNumber);
                 boolean trabajado = day != null && day.isWorked();
                 celda(tabla, DIAS[i], normalFont, Rectangle.BOX);
                 celda(tabla, FECHA.format(fecha), normalFont, Rectangle.BOX);
@@ -135,7 +135,7 @@ public class SchedulePdfService {
     }
 
     /** Busca el día (por dayNumber) dentro del listado de días del horario. */
-    private ScheduleDay diaDe(List<ScheduleDay> dias, int dayNumber) {
+    private DiaHorario diaDe(List<DiaHorario> dias, int dayNumber) {
         if (dias == null) {
             return null;
         }

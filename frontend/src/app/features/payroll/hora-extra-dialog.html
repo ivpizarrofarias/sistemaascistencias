@@ -1,0 +1,53 @@
+<h2 mat-dialog-title>Registrar horas extra</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="employee">
+      <mat-icon>badge</mat-icon>
+      <div>
+        <div class="name">{{ data.employee.fullName }}</div>
+        <div class="muted">{{ data.employee.rut }} · {{ data.employee.code }}</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input
+          matInput
+          type="date"
+          formControlName="date"
+          (change)="onDateChange($any($event.target).value)"
+        />
+        @if (form.controls.date.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Horas trabajadas</mat-label>
+        <input matInput type="number" min="0.5" step="0.5" formControlName="horas" />
+        <mat-hint>Dato informativo</mat-hint>
+        @if (form.controls.horas.invalid) {
+          <mat-error>Mínimo 0.5 horas</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Monto a pagar (CLP)</mat-label>
+      <input matInput type="number" min="0" step="any" formControlName="monto" />
+      <mat-hint>Es el monto exacto que se mostrará en la liquidación.</mat-hint>
+      @if (form.controls.monto.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      } @else if (form.controls.monto.hasError('min')) {
+        <mat-error>No puede ser negativo</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()">Guardar</button>
+</mat-dialog-actions>

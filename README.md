@@ -9,7 +9,7 @@ El proyecto tiene tres partes:
 | Carpeta    | Descripción                                             |
 |------------|---------------------------------------------------------|
 | `backend/` | API REST (Spring Boot 4.0.8, Java 17, MySQL por defecto) |
-| `frontend/`| Aplicación web (React + Vite + TypeScript)              |
+| `frontend/`| Aplicación web (Angular 21 + Angular Material)        |
 | `android/` | App Android de marcaje (Kotlin + Jetpack Compose)       |
 
 ---
@@ -31,7 +31,12 @@ El proyecto tiene tres partes:
    ```
 2. Ajustar `spring.datasource.password` en
    `backend/src/main/resources/application.properties`.
-3. Ejecutar (desde `backend/`):
+3. Si ya tenías la base creada con los nombres de tabla en inglés, ejecuta
+   **una sola vez** el script de migración (con la aplicación detenida):
+   ```bash
+   mysql -uroot -p sistema_asis < migracion_nombres_espanol.sql
+   ```
+4. Ejecutar (desde `backend/`):
    ```bash
    ./mvnw spring-boot:run
    ```
@@ -39,10 +44,50 @@ El proyecto tiene tres partes:
 
    Usuario admin por defecto: `admin` / `admin123`.
 
-4. Ejecutar los tests (52 tests de unidad e integración, usan H2):
+5. Ejecutar los tests (75 tests de unidad e integración, usan H2):
    ```bash
    ./mvnw test
    ```
+
+### Modelo de datos
+
+Todas las entidades JPA y sus tablas están en español:
+
+| Entidad           | Tabla                     |
+|-------------------|---------------------------|
+| `Empleado`        | `empleados`               |
+| `Usuario`         | `usuarios`                |
+| `Asistencia`      | `asistencias`             |
+| `HorarioSemanal`  | `horarios_semanales`      |
+| `DiaHorario`      | `dias_horario_semanal`    |
+| `PermisoLaboral`  | `permisos_laborales`      |
+| `Liquidacion`     | `liquidaciones`           |
+| `LiquidacionDetalle` | `liquidacion_detalle`   |
+| `Anticipo`        | `anticipos`               |
+| `LicenciaMedica`  | `licencias_medicas`       |
+| `HoraExtra`       | `horas_extra`             |
+| `ParametroSistema`| `parametros_sistema`      |
+
+Los DTOs y los contratos JSON de la API conservan sus nombres en inglés
+(`EmployeeResponse`, `AttendanceResponse`, …) para no romper los clientes
+(frontend y app Android).
+
+### Reglas de negocio
+
+- **Licencias médicas**: el empleador no paga la licencia. Todos los días
+  solapados de una licencia se descuentan del sueldo del trabajador, por lo que
+  no existe un haber de subsidio patronal. Las columnas
+  `licencias_medicas.employer_pays` y
+  `liquidaciones.subsidio_licencia_empleador` se conservan en la base de datos
+  solo por compatibilidad (`migracion_sin_subsidio_licencia.sql` las deja con
+  default `0`), pero el código y la API ya no las utilizan.
+- **Control de asistencia**: la vista es maestro/detalle. Se listan todos los
+  empleados y, al seleccionar uno, se muestra su asistencia del período. No
+  existe un endpoint masivo: cada consulta va a
+  `GET /api/attendance/employee/{id}`.
+- **Liquidación de sueldo**: el anticipo del período se descuenta junto con el
+  resto de los descuentos y aparece como una línea normal
+  `Anticipo de sueldo — DESCUENTO`, sin una sección aparte.
 
 ---
 
@@ -52,20 +97,27 @@ Desde `frontend/`:
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+npm start           # http://localhost:4200
 ```
 
-El Vite está configurado con proxy `/api` → `http://localhost:8080`, así que
-debe estar corriendo el backend. Para producción:
+Angular CLI está configurado con proxy `/api` → `http://localhost:8080`
+(`proxy.conf.json`), así que debe estar corriendo el backend. Para producción:
 
 ```bash
-npm run build
+npm run build       # salida en dist/sistema-asistencias
 ```
 
-Incluye un **kiosco público** (`/mark`) para que los trabajadores marquen su
-asistencia por RUT, paneles de administración (empleados, asistencia, permisos,
-liquidaciones) y portal del empleado (mis permisos, mi asistencia, mis
-liquidaciones).
+Incluye un **dashboard** con KPIs y gráficos de asistencia del personal, y
+paneles de administración: empleados, horarios semanales (con descarga de PDF),
+control de asistencia, permisos laborales y remuneraciones (liquidaciones,
+anticipos, licencias médicas y horas extra). El marcaje por RUT se hace desde la
+app Android.
+
+### Stack
+
+- Angular 21 (standalone components, signals, zoneless).
+- Angular Material 21 con tema M3 y `ng2-charts` + Chart.js para el dashboard.
+- Carga perezosa por ruta (`loadComponent`) y servicios con `HttpClient`.
 
 ---
 
@@ -111,7 +163,9 @@ La base URL de la API está en
 - `GET /api/attendance/employee/{id}` — asistencias de un empleado.
 - `GET /api/permisos/employee/{id}` — permisos de un empleado.
 - `GET /api/payroll/liquidaciones/employee/{employeeId}` — liquidaciones de un empleado.
+- `GET /api/payroll/liquidaciones/{id}/pdf` — PDF de la liquidación, en una sola
+  hoja, con el bloque de firma del trabajador y nombre de archivo
+  `Liquidación_<Empleado>_<Mes>_<Año>.pdf` (UTF-8 vía `filename*`, con fallback
+  ASCII para clientes antiguos).
 - CRUD de empleados, asistencia (admin), permisos (admin/empleado) y
   liquidaciones (admin) según las reglas de negocio del sistema.
-# sistemaascistencias
-# sistemaascistencias

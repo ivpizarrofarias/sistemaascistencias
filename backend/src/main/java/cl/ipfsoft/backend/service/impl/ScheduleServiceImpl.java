@@ -2,8 +2,8 @@ package cl.ipfsoft.backend.service.impl;
 
 import cl.ipfsoft.backend.dto.schedule.WeeklyScheduleRequest;
 import cl.ipfsoft.backend.dto.schedule.WeeklyScheduleResponse;
-import cl.ipfsoft.backend.entity.Employee;
-import cl.ipfsoft.backend.entity.WeeklySchedule;
+import cl.ipfsoft.backend.entity.Empleado;
+import cl.ipfsoft.backend.entity.HorarioSemanal;
 import cl.ipfsoft.backend.exception.ResourceNotFoundException;
 import cl.ipfsoft.backend.mapper.ScheduleMapper;
 import cl.ipfsoft.backend.repository.EmployeeRepository;
@@ -40,7 +40,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional(readOnly = true)
     public List<WeeklyScheduleResponse> listByEmployee(Long employeeId) {
-        Employee employee = getEmployee(employeeId);
+        Empleado employee = getEmployee(employeeId);
         return scheduleRepository.findByEmployeeOrderByStartDateDesc(employee).stream()
                 .map(mapper::toResponse)
                 .toList();
@@ -49,7 +49,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional(readOnly = true)
     public WeeklyScheduleResponse getByEmployeeAndWeek(Long employeeId, LocalDate startDate) {
-        Employee employee = getEmployee(employeeId);
+        Empleado employee = getEmployee(employeeId);
         LocalDate monday = mondayOf(startDate);
         return scheduleRepository.findByEmployeeAndStartDate(employee, monday)
                 .map(mapper::toResponse)
@@ -59,13 +59,13 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional
     public WeeklyScheduleResponse save(WeeklyScheduleRequest request) {
-        Employee employee = getEmployee(request.employeeId());
+        Empleado employee = getEmployee(request.employeeId());
         LocalDate monday = mondayOf(request.startDate());
 
         // Upsert: si ya existe el horario de esa semana, se actualiza.
-        WeeklySchedule ws = scheduleRepository
+        HorarioSemanal ws = scheduleRepository
                 .findByEmployeeAndStartDate(employee, monday)
-                .orElseGet(WeeklySchedule::new);
+                .orElseGet(HorarioSemanal::new);
         mapper.applyRequest(ws, new WeeklyScheduleRequest(employee.getId(), monday, request.label(), request.days()), employee);
         return mapper.toResponse(scheduleRepository.save(ws));
     }
@@ -73,9 +73,9 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional
     public WeeklyScheduleResponse update(Long id, WeeklyScheduleRequest request) {
-        WeeklySchedule ws = scheduleRepository.findById(id)
+        HorarioSemanal ws = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Horario no encontrado con id " + id));
-        Employee employee = getEmployee(request.employeeId());
+        Empleado employee = getEmployee(request.employeeId());
         mapper.applyRequest(ws, new WeeklyScheduleRequest(employee.getId(), mondayOf(request.startDate()), request.label(), request.days()), employee);
         return mapper.toResponse(scheduleRepository.save(ws));
     }
@@ -83,7 +83,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional
     public void delete(Long id) {
-        WeeklySchedule ws = scheduleRepository.findById(id)
+        HorarioSemanal ws = scheduleRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Horario no encontrado con id " + id));
         scheduleRepository.delete(ws);
     }
@@ -91,13 +91,13 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     @Transactional(readOnly = true)
     public byte[] generateSchedulePdf(Long employeeId, LocalDate startDate) {
-        Employee employee = getEmployee(employeeId);
+        Empleado employee = getEmployee(employeeId);
         if (!employee.isEnabled()) {
             throw new cl.ipfsoft.backend.exception.BusinessException(
                     "El empleado está deshabilitado y no se puede generar su horario.");
         }
         LocalDate monday = mondayOf(startDate);
-        WeeklySchedule ws = scheduleRepository.findByEmployeeAndStartDate(employee, monday)
+        HorarioSemanal ws = scheduleRepository.findByEmployeeAndStartDate(employee, monday)
                 .orElseGet(() -> mapper.empty(employee, monday));
         return pdfService.generatePdf(ws);
     }
@@ -107,7 +107,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         return ScheduleUtils.mondayOf(date);
     }
 
-    private Employee getEmployee(Long id) {
+    private Empleado getEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + id));
     }

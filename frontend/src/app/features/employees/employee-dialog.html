@@ -1,0 +1,123 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="emp-form" id="employee-form" (ngSubmit)="submit()">
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>RUT</mat-label>
+        <input
+          matInput
+          formControlName="rut"
+          placeholder="12.222.232-K"
+          autocomplete="off"
+          (input)="onRutInput($any($event.target).value)"
+          (blur)="rutTouched.set(true)"
+          required
+        />
+        @if (mostrarErrorRut) {
+          <mat-error>RUT inválido o dígito verificador incorrecto</mat-error>
+        } @else if (rutValido) {
+          <mat-hint class="valid-hint">RUT válido</mat-hint>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de ingreso</mat-label>
+        <input matInput type="date" formControlName="hireDate" required />
+        <mat-error>La fecha de ingreso es obligatoria</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nombre</mat-label>
+        <input matInput formControlName="firstName" required />
+        <mat-error>El nombre es obligatorio</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Apellido</mat-label>
+        <input matInput formControlName="lastName" required />
+        <mat-error>El apellido es obligatorio</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="phone" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" formControlName="email" />
+        <mat-error>El email no es válido</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sueldo base (CLP)</mat-label>
+        <input
+          matInput
+          formControlName="baseSalary"
+          placeholder="590.000"
+          inputmode="numeric"
+          (input)="onSalaryInput($any($event.target).value)"
+          required
+        />
+        <mat-hint>Con puntos de miles, p. ej. 590.000</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargas</mat-label>
+        <input matInput type="number" min="0" formControlName="dependents" />
+        <mat-hint>Determina la asignación familiar</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sistema de pensión</mat-label>
+        <mat-select formControlName="pensionSystem">
+          <mat-option value="AFP">AFP</mat-option>
+          <mat-option value="IPS">IPS / INP</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fondo AFP</mat-label>
+        <input matInput formControlName="afpFund" placeholder="Ej: HABITAT, CAPITAL" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sistema de salud</mat-label>
+        <mat-select formControlName="healthSystem">
+          <mat-option value="FONASA">FONASA</mat-option>
+          <mat-option value="ISAPRE">ISAPRE</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (isEdit) {
+      <div class="code-box">
+        <mat-icon>badge</mat-icon>
+        <div>
+          <span class="code-label">Código de marcaje</span>
+          <strong class="code-value">{{ data.initial?.code }}</strong>
+          <p class="code-hint">
+            El trabajador marca asistencia con este código de 4 dígitos; no tiene usuario ni
+            contraseña. El código no se puede modificar.
+          </p>
+        </div>
+      </div>
+    } @else {
+      <div class="info-box">
+        <mat-icon>info</mat-icon>
+        <span>
+          Al crear el empleado el sistema le generará automáticamente un código de marcaje
+          único; anótalo y entrégaselo al trabajador.
+        </span>
+      </div>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" type="submit" form="employee-form">
+    {{ isEdit ? 'Actualizar' : 'Crear' }}
+  </button>
+</mat-dialog-actions>

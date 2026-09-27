@@ -4,9 +4,9 @@ import cl.ipfsoft.backend.dto.schedule.ScheduleDayRequest;
 import cl.ipfsoft.backend.dto.schedule.ScheduleDayResponse;
 import cl.ipfsoft.backend.dto.schedule.WeeklyScheduleRequest;
 import cl.ipfsoft.backend.dto.schedule.WeeklyScheduleResponse;
-import cl.ipfsoft.backend.entity.Employee;
-import cl.ipfsoft.backend.entity.ScheduleDay;
-import cl.ipfsoft.backend.entity.WeeklySchedule;
+import cl.ipfsoft.backend.entity.Empleado;
+import cl.ipfsoft.backend.entity.DiaHorario;
+import cl.ipfsoft.backend.entity.HorarioSemanal;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Conversión entre la entidad WeeklySchedule y sus DTOs.
+ * Conversión entre la entidad HorarioSemanal y sus DTOs.
  */
 @Component
 public class ScheduleMapper {
@@ -22,10 +22,10 @@ public class ScheduleMapper {
     private static final int MONDAY = 1;
     private static final int SATURDAY = 6;
 
-    public WeeklyScheduleResponse toResponse(WeeklySchedule ws) {
-        Employee emp = ws.getEmployee();
+    public WeeklyScheduleResponse toResponse(HorarioSemanal ws) {
+        Empleado emp = ws.getEmployee();
         List<ScheduleDayResponse> days = ws.getDays().stream()
-                .sorted(Comparator.comparingInt(ScheduleDay::getDayNumber))
+                .sorted(Comparator.comparingInt(DiaHorario::getDayNumber))
                 .map(this::dayToResponse)
                 .toList();
         return new WeeklyScheduleResponse(
@@ -39,7 +39,7 @@ public class ScheduleMapper {
         );
     }
 
-    private ScheduleDayResponse dayToResponse(ScheduleDay d) {
+    private ScheduleDayResponse dayToResponse(DiaHorario d) {
         return new ScheduleDayResponse(d.getId(), d.getDayNumber(), d.isWorked(), d.getStartTime(), d.getEndTime());
     }
 
@@ -53,18 +53,18 @@ public class ScheduleMapper {
      * violar el índice único (schedule_id, dayNumber).
      * </p>
      */
-    public void applyRequest(WeeklySchedule ws, WeeklyScheduleRequest r, Employee employee) {
+    public void applyRequest(HorarioSemanal ws, WeeklyScheduleRequest r, Empleado employee) {
         ws.setEmployee(employee);
         ws.setStartDate(r.startDate());
         ws.setLabel(r.label());
 
-        // Mapa de días existentes (dayNumber -> ScheduleDay) para reutilizarlos.
-        java.util.Map<Integer, ScheduleDay> existentes = new java.util.HashMap<>();
-        for (ScheduleDay d : ws.getDays()) {
+        // Mapa de días existentes (dayNumber -> DiaHorario) para reutilizarlos.
+        java.util.Map<Integer, DiaHorario> existentes = new java.util.HashMap<>();
+        for (DiaHorario d : ws.getDays()) {
             existentes.put(d.getDayNumber(), d);
         }
 
-        List<ScheduleDay> nuevos = new ArrayList<>();
+        List<DiaHorario> nuevos = new ArrayList<>();
         for (int day = MONDAY; day <= SATURDAY; day++) {
             final int d = day;
             ScheduleDayRequest req = r.days().stream()
@@ -72,9 +72,9 @@ public class ScheduleMapper {
                     .findFirst()
                     .orElse(null);
 
-            ScheduleDay sd = existentes.get(day);
+            DiaHorario sd = existentes.get(day);
             if (sd == null) {
-                sd = new ScheduleDay();
+                sd = new DiaHorario();
                 sd.setSchedule(ws);
                 sd.setDayNumber(day);
             }
@@ -93,8 +93,8 @@ public class ScheduleMapper {
     }
 
     /** Crea la semana con el primer día trabajado por defecto (lunes) para edición. */
-    public WeeklySchedule empty(Employee employee, java.time.LocalDate startDate) {
-        WeeklySchedule ws = new WeeklySchedule();
+    public HorarioSemanal empty(Empleado employee, java.time.LocalDate startDate) {
+        HorarioSemanal ws = new HorarioSemanal();
         ws.setEmployee(employee);
         ws.setStartDate(startDate);
         ws.setLabel("Semana del " + startDate);

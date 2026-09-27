@@ -43,43 +43,59 @@ public class PayrollPdfService {
 
     /** Genera el PDF (bytes) de la liquidación indicada. */
     public byte[] generatePdf(Liquidacion l) {
-        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
-        Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
-        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
-        Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
-        Font smallFont = FontFactory.getFont(FontFactory.HELVETICA, 8);
-        Font smallBoldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8);
+        // Cuerpos grandes y espaciado holgado: la liquidación es un documento
+        // que se lee e imprime, así que se aprovecha toda la hoja en vez de
+        // dejar media página en blanco.
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 17);
+        Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+        Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 12);
+        Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+        Font smallFont = FontFactory.getFont(FontFactory.HELVETICA, 10.5f);
+        Font smallBoldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
+        Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 15);
 
-        Document doc = new Document(PageSize.A4, 36, 36, 36, 36);
+        // Márgenes menores que los de A4 por defecto: dan más área útil sin
+        // tocar el borde de impresión de una impresora normal.
+        Document doc = new Document(PageSize.A4, 30, 30, 24, 24);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         try {
             PdfWriter.getInstance(doc, out);
             doc.open();
 
             // ========== ENCABEZADO: EMPRESA Y PERÍODO ==========
-            Paragraph empresa = new Paragraph(companyName, titleFont);
-            empresa.setAlignment(Element.ALIGN_CENTER);
-            doc.add(empresa);
+            // Empresa a la izquierda y título/período a la derecha, en una sola
+            // fila: ocupa la mitad de alto que cuatro párrafos centrados.
+            PdfPTable encabezado = new PdfPTable(2);
+            encabezado.setWidthPercentage(100);
+            encabezado.setWidths(new float[]{3f, 3f});
+            encabezado.setSpacingAfter(12);
 
-            Paragraph rutEmpresa = new Paragraph("RUT: " + companyRut, normalFont);
-            rutEmpresa.setAlignment(Element.ALIGN_CENTER);
-            doc.add(rutEmpresa);
+            PdfPCell celdaEmpresa = new PdfPCell();
+            celdaEmpresa.setBorder(Rectangle.NO_BORDER);
+            celdaEmpresa.setPadding(0);
+            celdaEmpresa.addElement(new Paragraph(companyName, titleFont));
+            celdaEmpresa.addElement(new Paragraph("RUT: " + companyRut, smallFont));
+            encabezado.addCell(celdaEmpresa);
 
+            PdfPCell celdaTitulo = new PdfPCell();
+            celdaTitulo.setBorder(Rectangle.NO_BORDER);
+            celdaTitulo.setPadding(0);
             Paragraph titulo = new Paragraph("LIQUIDACIÓN DE SUELDO", headerFont);
-            titulo.setAlignment(Element.ALIGN_CENTER);
-            doc.add(titulo);
+            titulo.setAlignment(Element.ALIGN_RIGHT);
+            Paragraph periodo = new Paragraph(
+                    "Período: " + nombreMes(l.getPeriodYear(), l.getPeriodMonth()), boldFont);
+            periodo.setAlignment(Element.ALIGN_RIGHT);
+            celdaTitulo.addElement(titulo);
+            celdaTitulo.addElement(periodo);
+            encabezado.addCell(celdaTitulo);
 
-            Paragraph periodo = new Paragraph("Período: " + nombreMes(l.getPeriodYear(), l.getPeriodMonth()), boldFont);
-            periodo.setAlignment(Element.ALIGN_CENTER);
-            doc.add(periodo);
-
-            doc.add(new Paragraph(" ", normalFont));
+            doc.add(encabezado);
 
             // ========== DATOS DEL TRABAJADOR ==========
             PdfPTable datosTrabajador = new PdfPTable(4);
             datosTrabajador.setWidthPercentage(100);
             datosTrabajador.setWidths(new float[]{2f, 2f, 2f, 2f});
-            datosTrabajador.setSpacingAfter(10);
+            datosTrabajador.setSpacingAfter(8);
 
             addCell(datosTrabajador, "Trabajador:", l.getEmployee().getFullName(), boldFont, normalFont);
             addCell(datosTrabajador, "RUT:", RutUtils.format(l.getEmployee().getRut()), boldFont, normalFont);
@@ -97,13 +113,12 @@ public class PayrollPdfService {
             addCell(datosTrabajador, "Sueldo Base:", "$" + formato(l.getSueldoBase()), boldFont, normalFont);
 
             doc.add(datosTrabajador);
-            doc.add(new Paragraph(" ", normalFont));
 
             // ========== HABERES ==========
             addSectionTitle(doc, "HABERES", headerFont);
             PdfPTable haberesTable = new PdfPTable(3);
             haberesTable.setWidthPercentage(100);
-            haberesTable.setWidths(new float[]{5f, 1f, 2f});
+            haberesTable.setWidths(new float[]{4.3f, 1.7f, 2f});
             haberesTable.setSpacingAfter(8);
 
             addHeaderRow(haberesTable, "CONCEPTO", "TIPO", "MONTO", headerFont);
@@ -124,7 +139,7 @@ public class PayrollPdfService {
             addSectionTitle(doc, "DESCUENTOS", headerFont);
             PdfPTable descuentosTable = new PdfPTable(3);
             descuentosTable.setWidthPercentage(100);
-            descuentosTable.setWidths(new float[]{5f, 1f, 2f});
+            descuentosTable.setWidths(new float[]{4.3f, 1.7f, 2f});
             descuentosTable.setSpacingAfter(8);
 
             addHeaderRow(descuentosTable, "CONCEPTO", "TIPO", "MONTO", headerFont);
@@ -150,13 +165,14 @@ public class PayrollPdfService {
 
             addResumenRow(resumenTable, "Total Haberes:", "$" + formato(l.getTotalHaberes()), boldFont, boldFont);
             addResumenRow(resumenTable, "Total Descuentos:", "$" + formato(l.getTotalDescuentos()), boldFont, boldFont);
-            addResumenRow(resumenTable, "LÍQUIDO A PAGAR:", "$" + formato(l.getLiquidoAPagar()), 
-                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12), 
-                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12));
+            addResumenRow(resumenTable, "LÍQUIDO A PAGAR:", "$" + formato(l.getLiquidoAPagar()),
+                    totalFont, totalFont);
             doc.add(resumenTable);
 
-            doc.add(new Paragraph(" ", normalFont));
-            doc.add(new Paragraph("Documento generado por " + companyName, smallFont));
+            // ========== FIRMA DEL TRABAJADOR ==========
+            // El trabajador recibe y firma la liquidación; se deja el espacio
+            // para la firma manuscrita con su nombre y RUT impresos.
+            doc.add(signatureBlock(l, normalFont, smallBoldFont));
 
             doc.close();
         } catch (DocumentException e) {
@@ -167,10 +183,51 @@ public class PayrollPdfService {
 
     private void addSectionTitle(Document doc, String title, Font font) throws DocumentException {
         Paragraph p = new Paragraph(title, font);
-        p.setSpacingBefore(8);
-        p.setSpacingAfter(4);
+        p.setSpacingBefore(7);
+        p.setSpacingAfter(3);
         doc.add(p);
     }
+
+    /**
+     * Bloque de firma del trabajador: una línea horizontal para la firma
+     * manuscrita, con el nombre y el RUT impresos debajo.
+     */
+    private PdfPTable signatureBlock(Liquidacion l, Font normalFont, Font labelFont) {
+        PdfPTable tabla = new PdfPTable(1);
+        tabla.setWidthPercentage(70);
+        tabla.setHorizontalAlignment(Element.ALIGN_CENTER);
+        tabla.setSpacingBefore(24);
+        tabla.setKeepTogether(true);
+
+        // Espacio en blanco para la firma manuscrita.
+        PdfPCell espacio = new PdfPCell(new Phrase(" ", normalFont));
+        espacio.setBorder(Rectangle.NO_BORDER);
+        espacio.setFixedHeight(70f);
+        tabla.addCell(espacio);
+
+        // Línea sobre la que se firma.
+        PdfPCell linea = new PdfPCell(new Phrase(" ", normalFont));
+        linea.setBorder(Rectangle.TOP);
+        linea.setPaddingTop(0);
+        tabla.addCell(linea);
+
+        // Nombre del trabajador.
+        PdfPCell nombre = new PdfPCell(new Phrase(l.getEmployee().getFullName(), normalFont));
+        nombre.setBorder(Rectangle.NO_BORDER);
+        nombre.setPaddingTop(5);
+        nombre.setHorizontalAlignment(Element.ALIGN_CENTER);
+        tabla.addCell(nombre);
+
+        // RUT y leyenda de la firma.
+        PdfPCell leyenda = new PdfPCell(new Phrase(
+                "Firma del trabajador · RUT: " + RutUtils.format(l.getEmployee().getRut()), labelFont));
+        leyenda.setBorder(Rectangle.NO_BORDER);
+        leyenda.setHorizontalAlignment(Element.ALIGN_CENTER);
+        tabla.addCell(leyenda);
+
+        return tabla;
+    }
+
 
     private void addHeaderRow(PdfPTable table, String c1, String c2, String c3, Font font) {
         addCell(table, c1, font, Rectangle.BOX, Element.ALIGN_CENTER);
@@ -187,13 +244,13 @@ public class PayrollPdfService {
     private void addResumenRow(PdfPTable table, String label, String value, Font labelFont, Font valueFont) {
         PdfPCell c1 = new PdfPCell(new Phrase(label, labelFont));
         c1.setBorder(Rectangle.BOX);
-        c1.setPadding(6);
+        c1.setPadding(5);
         c1.setHorizontalAlignment(Element.ALIGN_LEFT);
         table.addCell(c1);
 
         PdfPCell c2 = new PdfPCell(new Phrase(value, valueFont));
         c2.setBorder(Rectangle.BOX);
-        c2.setPadding(6);
+        c2.setPadding(5);
         c2.setHorizontalAlignment(Element.ALIGN_RIGHT);
         table.addCell(c2);
     }
@@ -215,7 +272,7 @@ public class PayrollPdfService {
     private void addCell(PdfPTable table, String text, Font font, int border, int align) {
         PdfPCell c = new PdfPCell(new Phrase(text, font));
         c.setBorder(border);
-        c.setPadding(4);
+        c.setPadding(3.5f);
         c.setHorizontalAlignment(align);
         table.addCell(c);
     }

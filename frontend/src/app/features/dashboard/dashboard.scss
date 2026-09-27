@@ -1,0 +1,155 @@
+:host {
+  display: block;
+}
+
+.dash-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.dash-error mat-icon {
+  flex-shrink: 0;
+}
+
+.dash-error span {
+  flex: 1;
+  font-size: 0.9rem;
+}
+
+.period-select {
+  min-width: 200px;
+}
+
+// ---------------------------------------------------------------------------
+// Gráficos
+// ---------------------------------------------------------------------------
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.chart-card {
+  border-radius: 14px;
+  max-width: 320px;
+}
+
+.chart-wide {
+  grid-column: 1 / -1;
+  max-width: none;
+}
+
+.chart-box {
+  position: relative;
+  height: 150px;
+  margin-top: 4px;
+}
+
+.chart-wide .chart-box {
+  height: 150px;
+}
+
+.chart-card mat-card-header {
+  padding: 12px 16px 0;
+}
+
+.chart-card mat-card-content {
+  padding: 0 16px 12px;
+}
+
+.detail-card {
+  margin-top: 16px;
+  border-radius: 16px;
+}
+
+// ---------------------------------------------------------------------------
+// Tabla de detalle
+// ---------------------------------------------------------------------------
+.emp-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.emp-avatar {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.emp-name {
+  font-weight: 500;
+}
+
+.emp-rut {
+  font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.num-col {
+  text-align: right;
+}
+
+.pct-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.pct-bar {
+  flex: 1;
+  max-width: 90px;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.pct-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #2e7d32;
+}
+
+.pct-fill.warn {
+  background: #f9a825;
+}
+
+.pct-fill.bad {
+  background: #c62828;
+}
+
+.pct-value {
+  min-width: 42px;
+  text-align: right;
+  font-weight: 500;
+}
+
+@media (max-width: 700px) {
+  .chart-card {
+    max-width: none;
+  }
+
+  .chart-box,
+  .chart-wide .chart-box {
+    height: 140px;
+  }
+}

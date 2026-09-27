@@ -2,8 +2,8 @@ package cl.ipfsoft.backend.service.impl;
 
 import cl.ipfsoft.backend.dto.auth.AuthResponse;
 import cl.ipfsoft.backend.dto.auth.LoginRequest;
-import cl.ipfsoft.backend.entity.AppUser;
-import cl.ipfsoft.backend.entity.Role;
+import cl.ipfsoft.backend.entity.Usuario;
+import cl.ipfsoft.backend.entity.Rol;
 import cl.ipfsoft.backend.repository.AppUserRepository;
 import cl.ipfsoft.backend.security.JwtService;
 import cl.ipfsoft.backend.service.AuthService;
@@ -36,7 +36,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         // 1. Buscar el usuario por nombre de usuario.
-        AppUser user = userRepository.findByUsername(request.username())
+        Usuario user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new BadCredentialsException("Usuario o contraseña incorrectos"));
 
         // 2. Verificar que el usuario esté habilitado.

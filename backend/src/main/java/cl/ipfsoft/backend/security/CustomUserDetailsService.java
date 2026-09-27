@@ -1,7 +1,7 @@
 package cl.ipfsoft.backend.security;
 
-import cl.ipfsoft.backend.entity.AppUser;
-import cl.ipfsoft.backend.entity.Role;
+import cl.ipfsoft.backend.entity.Usuario;
+import cl.ipfsoft.backend.entity.Rol;
 import cl.ipfsoft.backend.repository.AppUserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -23,9 +23,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        AppUser user = userRepository.findByUsername(username)
+        Usuario user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
-        String authority = "ROLE_" + (user.getRole() == Role.ADMIN ? "ADMIN" : "EMPLOYEE");
+        String authority = "ROLE_" + (user.getRole() == Rol.ADMIN ? "ADMIN" : "EMPLOYEE");
         return User.withUsername(user.getUsername())
                 .password(user.getPassword())
                 .disabled(!user.isEnabled())

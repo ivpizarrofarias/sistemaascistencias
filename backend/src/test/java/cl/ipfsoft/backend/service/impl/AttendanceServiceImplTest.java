@@ -1,8 +1,8 @@
 package cl.ipfsoft.backend.service.impl;
 
 import cl.ipfsoft.backend.dto.attendance.MarkRequest;
-import cl.ipfsoft.backend.entity.Attendance;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Asistencia;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.exception.BusinessException;
 import cl.ipfsoft.backend.mapper.AttendanceMapper;
 import cl.ipfsoft.backend.repository.AttendanceRepository;
@@ -50,7 +50,7 @@ class AttendanceServiceImplTest {
     @Mock WeeklyScheduleRepository weeklyScheduleRepository;
 
     AttendanceServiceImpl service;
-    Employee employee;
+    Empleado employee;
 
     @BeforeEach
     void setUp() {
@@ -58,7 +58,7 @@ class AttendanceServiceImplTest {
                 attendanceRepository, employeeRepository, licenciaRepository,
                 weeklyScheduleRepository, new AttendanceMapper(), clock);
 
-        employee = new Employee();
+        employee = new Empleado();
         employee.setId(1L);
         employee.setRut("11111111-1");
         employee.setFirstName("Juan");
@@ -67,19 +67,19 @@ class AttendanceServiceImplTest {
         employee.setBaseSalary(new BigDecimal("1000000"));
     }
 
-    private void mockBasics(Attendance attendance) {
+    private void mockBasics(Asistencia attendance) {
         when(employeeRepository.findByRut("11111111-1")).thenReturn(Optional.of(employee));
         when(licenciaRepository.findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                 eq(1L), any(), any())).thenReturn(List.of());
-        lenient().when(attendanceRepository.findTopByEmployeeOrderByDateDesc(any(Employee.class)))
+        lenient().when(attendanceRepository.findTopByEmployeeOrderByDateDesc(any(Empleado.class)))
                 .thenReturn(Optional.ofNullable(attendance));
         when(attendanceRepository.findByEmployeeIdAndDate(1L, LocalDate.now(clock)))
                 .thenReturn(Optional.ofNullable(attendance));
-        when(attendanceRepository.save(any(Attendance.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(attendanceRepository.save(any(Asistencia.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
-    private Attendance newAttendance() {
-        Attendance a = new Attendance();
+    private Asistencia newAttendance() {
+        Asistencia a = new Asistencia();
         a.setEmployee(employee);
         a.setDate(LocalDate.now(clock));
         a.setNextStep("ENTRADA");
@@ -89,10 +89,10 @@ class AttendanceServiceImplTest {
     @Test
     void mark_secuenciaCompleta_avanzaPasosEnOrden() {
         // Registro compartido de hoy: las llamadas reutilizan la misma instancia.
-        Attendance att = newAttendance();
+        Asistencia att = newAttendance();
         mockBasics(att);
         // findTop: no hay registro previo -> empty.
-        when(attendanceRepository.findTopByEmployeeOrderByDateDesc(any(Employee.class)))
+        when(attendanceRepository.findTopByEmployeeOrderByDateDesc(any(Empleado.class)))
                 .thenReturn(Optional.empty());
 
         // 1º marca -> ENTRADA.
@@ -132,7 +132,7 @@ class AttendanceServiceImplTest {
     @Test
     void mark_diaAnteriorIncompleto_quedaBloqueado() {
         // Registro anterior (ayer) incompleto -> bloquea el marcaje de hoy.
-        Attendance previo = newAttendance();
+        Asistencia previo = newAttendance();
         previo.setDate(LocalDate.now(clock).minusDays(1));
         previo.setComplete(false);
         previo.setNextStep("COLACION_SALIDA");
@@ -140,7 +140,7 @@ class AttendanceServiceImplTest {
         when(employeeRepository.findByRut("11111111-1")).thenReturn(Optional.of(employee));
         when(licenciaRepository.findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                 eq(1L), any(), any())).thenReturn(List.of());
-        when(attendanceRepository.findTopByEmployeeOrderByDateDesc(any(Employee.class)))
+        when(attendanceRepository.findTopByEmployeeOrderByDateDesc(any(Empleado.class)))
                 .thenReturn(Optional.of(previo));
 
         BusinessException ex = assertThrows(BusinessException.class,

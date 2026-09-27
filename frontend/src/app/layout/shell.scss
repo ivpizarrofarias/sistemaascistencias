@@ -1,0 +1,151 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.shell-container {
+  height: 100%;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+// ---------------------------------------------------------------------------
+// Sidenav
+// ---------------------------------------------------------------------------
+.shell-sidenav {
+  width: 264px;
+  border-right: none;
+  background: var(--mat-sys-surface-container-low);
+  transition: width 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+// Cuando el sidenav está colapsado se muestra solo el rail de iconos.
+.shell-sidenav.rail {
+  width: 72px;
+}
+
+.shell-sidenav.rail .brand {
+  padding: 0 24px;
+}
+
+.shell-sidenav.rail .nav-list a {
+  margin: 2px 8px;
+  padding: 0 12px;
+  justify-content: center;
+}
+
+.shell-sidenav.rail .nav-list a [matListItemTitle] {
+  display: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 20px;
+  overflow: hidden;
+}
+
+.brand-logo {
+  color: var(--mat-sys-primary);
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.brand-title {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--mat-sys-on-surface);
+}
+
+.brand-sub {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.nav-list {
+  padding-top: 8px;
+}
+
+.nav-list a {
+  height: 48px;
+  margin: 2px 12px;
+  border-radius: 24px;
+  color: var(--mat-sys-on-surface-variant);
+  transition: background-color 150ms ease;
+}
+
+.nav-list a:hover {
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.nav-list a.active-link {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-weight: 500;
+}
+
+// ---------------------------------------------------------------------------
+// Toolbar
+// ---------------------------------------------------------------------------
+.shell-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.user-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-caret {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.menu-user {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 16px;
+  min-width: 200px;
+}
+
+.menu-role {
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// ---------------------------------------------------------------------------
+// Contenido
+// ---------------------------------------------------------------------------
+.shell-main {
+  display: block;
+}
+
+// Menú colapsado: el contenido (dashboard incluido) se estira para ocupar
+// todo el ancho que liberó el sidenav, sin tope de ancho.
+.shell-main.rail {
+  --page-max: none;
+}
+
+@media (max-width: 599px) {
+  .user-name {
+    display: none;
+  }
+}

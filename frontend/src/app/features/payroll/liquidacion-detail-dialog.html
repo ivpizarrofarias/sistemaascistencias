@@ -1,0 +1,85 @@
+<h2 mat-dialog-title>Detalle de liquidación</h2>
+
+<mat-dialog-content>
+  <div class="head">
+    <div>
+      <div class="name">{{ liq.employeeName }}</div>
+      <div class="muted">{{ liq.rut }} · {{ periodo }}</div>
+    </div>
+    <span class="estado-chip" [class.ok]="liq.pagada" [class.warn]="!liq.pagada">
+      {{ liq.pagada ? 'Pagada' : 'Pendiente' }}
+    </span>
+  </div>
+
+  <div class="days">
+    <span>Días hábiles: <strong>{{ liq.diasHabiles }}</strong></span>
+    <span>Trabajados: <strong>{{ liq.diasTrabajados }}</strong></span>
+    <span>Inasistencia: <strong>{{ liq.diasInasistencia }}</strong></span>
+    <span>Licencia: <strong>{{ liq.diasLicencia }}</strong></span>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-error">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  @if (downloading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <div class="table-scroll">
+    <table mat-table [dataSource]="liq.detalles" class="data-table">
+      <ng-container matColumnDef="concepto">
+        <th mat-header-cell *matHeaderCellDef>Concepto</th>
+        <td mat-cell *matCellDef="let d">{{ d.concepto }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tipo">
+        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+        <td mat-cell *matCellDef="let d">
+          <span class="estado-chip" [class.ok]="d.haber" [class.bad]="!d.haber">
+            {{ d.haber ? 'Haber' : 'Descuento' }}
+          </span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="monto">
+        <th mat-header-cell *matHeaderCellDef class="num">Monto</th>
+        <td mat-cell *matCellDef="let d" class="num">{{ formatMoney(d.monto) }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columns"></tr>
+      <tr mat-row *matRowDef="let row; columns: columns"></tr>
+    </table>
+  </div>
+
+  <div class="totals">
+    <div class="total-row">
+      <span>Total haberes</span>
+      <strong>{{ formatMoney(liq.totalHaberes) }}</strong>
+    </div>
+    <div class="total-row">
+      <span>Total descuentos</span>
+      <strong>{{ formatMoney(liq.totalDescuentos) }}</strong>
+    </div>
+    <div class="total-row grand">
+      <span>Líquido a pagar</span>
+      <strong>{{ formatMoney(liq.liquidoAPagar) }}</strong>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Cerrar</button>
+  <button
+    mat-flat-button
+    color="primary"
+    (click)="descargarPdf()"
+    [disabled]="downloading()"
+  >
+    <mat-icon>picture_as_pdf</mat-icon>
+    Descargar PDF
+  </button>
+</mat-dialog-actions>

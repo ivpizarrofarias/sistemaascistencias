@@ -1,6 +1,6 @@
 package cl.ipfsoft.backend.dto.attendance;
 
-import cl.ipfsoft.backend.entity.MarkStep;
+import cl.ipfsoft.backend.entity.PasoMarcaje;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -13,7 +13,7 @@ public record MarkResponse(
         Long employeeId,
         String fullName,
         LocalDate date,
-        MarkStep nextStep,
+        PasoMarcaje nextStep,
         LocalTime entryTime,
         LocalTime colacionSalida1,
         LocalTime colacionEntrada1,

@@ -1,0 +1,457 @@
+<div class="page">
+  <app-page-header
+    title="Remuneraciones"
+    subtitle="Liquidaciones, anticipos, licencias médicas y horas extra"
+  />
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+    </div>
+  }
+
+  <mat-card appearance="outlined" class="gen-card">
+    <div class="gen-period">
+      <mat-form-field appearance="outline" class="small-field">
+        <mat-label>Año</mat-label>
+        <mat-select [value]="genYear()" (valueChange)="onGenYearChange($event)">
+          @for (y of years(); track y) {
+            <mat-option [value]="y">{{ y }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="small-field">
+        <mat-label>Mes</mat-label>
+        <mat-select [value]="genMonth()" (valueChange)="onGenMonthChange($event)">
+          @for (m of months; track m) {
+            <mat-option [value]="m">{{ monthLabel(genYear(), m) }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <button
+      mat-flat-button
+      color="primary"
+      (click)="generarTodas()"
+      [disabled]="saving() || employees().length === 0"
+    >
+      <mat-icon>receipt_long</mat-icon>
+      Generar liquidaciones de todos
+    </button>
+  </mat-card>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  <mat-card appearance="outlined" class="tabs-card">
+    <mat-tab-group
+      [selectedIndex]="tab()"
+      (selectedIndexChange)="tab.set($event)"
+      animationDuration="0ms"
+    >
+      <!-- LIQUIDACIONES -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>description</mat-icon>
+          Liquidaciones
+        </ng-template>
+
+        <div class="tab-body">
+          <div class="toolbar">
+            <mat-form-field appearance="outline" class="search-field">
+              <mat-label>Buscar</mat-label>
+              <input
+                matInput
+                type="text"
+                placeholder="Nombre o RUT"
+                [value]="search()"
+                (input)="onSearchChange($any($event.target).value)"
+              />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="period-field">
+              <mat-label>Período</mat-label>
+              <mat-select [value]="visMonth()" (valueChange)="onVisMonthChange($event)">
+                @for (m of months; track m) {
+                  <mat-option [value]="m">{{ monthLabel(visYear(), m) }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="period-field">
+              <mat-label>Año</mat-label>
+              <mat-select [value]="visYear()" (valueChange)="onVisYearChange($event)">
+                @for (y of years(); track y) {
+                  <mat-option [value]="y">{{ y }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          @if (employees().length === 0 && !loading()) {
+            <app-empty-state icon="groups" message="No hay empleados registrados" />
+          } @else if (empleadosFiltrados().length === 0) {
+            <app-empty-state icon="search_off" message="Sin resultados para la búsqueda" />
+          } @else {
+            <div class="table-scroll">
+              <table mat-table [dataSource]="empleadosFiltrados()" class="data-table">
+                <ng-container matColumnDef="empleado">
+                  <th mat-header-cell *matHeaderCellDef>Empleado</th>
+                  <td mat-cell *matCellDef="let e">
+                    <div class="who">
+                      <span class="name">{{ e.fullName }}</span>
+                      <span class="muted">{{ e.rut }} · {{ e.code }}</span>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="periodo">
+                  <th mat-header-cell *matHeaderCellDef class="hide-sm">Período</th>
+                  <td mat-cell *matCellDef="let e" class="hide-sm">
+                    @if (liquidacionDe(e.id); as liq) {
+                      {{ monthLabel(liq.periodYear, liq.periodMonth) }}
+                    } @else {
+                      <span class="muted">-</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="sueldoBase">
+                  <th mat-header-cell *matHeaderCellDef class="hide-sm num-col">Sueldo base</th>
+                  <td mat-cell *matCellDef="let e" class="hide-sm num-col">
+                    {{ formatMoney(liquidacionDe(e.id)?.sueldoBase ?? e.baseSalary) }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="liquido">
+                  <th mat-header-cell *matHeaderCellDef class="num-col">Líquido a pagar</th>
+                  <td mat-cell *matCellDef="let e" class="num-col">
+                    @if (liquidacionDe(e.id); as liq) {
+                      <strong>{{ formatMoney(liq.liquidoAPagar) }}</strong>
+                      <div class="muted">
+                        Extras: {{ formatMoney(liq.montoHorasExtras) }}
+                      </div>
+                    } @else {
+                      <span class="muted">-</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="estado">
+                  <th mat-header-cell *matHeaderCellDef>Estado</th>
+                  <td mat-cell *matCellDef="let e">
+                    @if (liquidacionDe(e.id); as liq) {
+                      <span class="estado-chip" [class.ok]="liq.pagada" [class.warn]="!liq.pagada">
+                        {{ liq.pagada ? 'Pagada' : 'Pendiente' }}
+                      </span>
+                    } @else {
+                      <span class="estado-chip neutral">Sin liquidación</span>
+                    }
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="acciones">
+                  <th mat-header-cell *matHeaderCellDef class="cell-actions">Acciones</th>
+                  <td mat-cell *matCellDef="let e" class="cell-actions">
+                    @if (liquidacionDe(e.id); as liq) {
+                      <button
+                        mat-icon-button
+                        matTooltip="Ver liquidación"
+                        (click)="verDetalle(liq)"
+                      >
+                        <mat-icon>visibility</mat-icon>
+                      </button>
+                      @if (!liq.pagada) {
+                        <button
+                          mat-icon-button
+                          color="primary"
+                          matTooltip="Marcar pagada"
+                          (click)="marcarPagada(liq)"
+                          [disabled]="saving()"
+                        >
+                          <mat-icon>paid</mat-icon>
+                        </button>
+                      }
+                    }
+                    <button
+                      mat-icon-button
+                      matTooltip="Generar liquidación y ver PDF"
+                      (click)="generarUna(e)"
+                      [disabled]="saving()"
+                    >
+                      <mat-icon>picture_as_pdf</mat-icon>
+                    </button>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="liquidacionColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: liquidacionColumns"></tr>
+              </table>
+            </div>
+
+            @if (deshabilitados() > 0) {
+              <p class="note">
+                <mat-icon>info</mat-icon>
+                {{ deshabilitados() }} empleado(s) deshabilitado(s) no aparecen en esta lista.
+              </p>
+            }
+          }
+        </div>
+      </mat-tab>
+
+      <!-- HORAS EXTRA -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>schedule</mat-icon>
+          Horas extra
+        </ng-template>
+
+        <div class="tab-body">
+          <p class="note">
+            <mat-icon>info</mat-icon>
+            El monto es el valor exacto que se suma a la liquidación del período.
+          </p>
+
+          @if (loading()) {
+            <app-loading [spinner]="true" message="Cargando horas extra…" />
+          } @else if (empleadosFiltrados().length === 0) {
+            <app-empty-state icon="search_off" message="Sin resultados para la búsqueda" />
+          } @else {
+            @for (e of empleadosFiltrados(); track e.id) {
+              <div class="emp-block">
+                <div class="emp-head">
+                  <div>
+                    <span class="name">{{ e.fullName }}</span>
+                    <span class="muted">{{ e.rut }}</span>
+                  </div>
+                  <div class="emp-actions">
+                    <span class="total">
+                      Total período: {{ formatMoney(totalExtrasPeriodo(e.id)) }}
+                    </span>
+                    <button
+                      mat-stroked-button
+                      color="primary"
+                      (click)="openHoraExtra(e)"
+                      [disabled]="saving()"
+                    >
+                      <mat-icon>add</mat-icon>
+                      Registrar
+                    </button>
+                  </div>
+                </div>
+
+                @if (extrasDe(e.id).length === 0) {
+                  <p class="muted pad">No hay horas extra registradas</p>
+                } @else {
+                  <div class="table-scroll">
+                    <table mat-table [dataSource]="extrasDe(e.id)" class="data-table">
+                      <ng-container matColumnDef="fecha">
+                        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                        <td mat-cell *matCellDef="let h">{{ formatDate(h.date) }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="horas">
+                        <th mat-header-cell *matHeaderCellDef class="num-col">Horas</th>
+                        <td mat-cell *matCellDef="let h" class="num-col">{{ h.horas }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="monto">
+                        <th mat-header-cell *matHeaderCellDef class="num-col">Monto</th>
+                        <td mat-cell *matCellDef="let h" class="num-col">
+                          <strong>{{ formatMoney(h.monto) }}</strong>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="acciones">
+                        <th mat-header-cell *matHeaderCellDef class="cell-actions"></th>
+                        <td mat-cell *matCellDef="let h" class="cell-actions">
+                          <button
+                            mat-icon-button
+                            matTooltip="Eliminar"
+                            (click)="deleteHoraExtra(h)"
+                            [disabled]="saving()"
+                          >
+                            <mat-icon>delete_outline</mat-icon>
+                          </button>
+                        </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="extrasColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: extrasColumns"></tr>
+                    </table>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </mat-tab>
+
+      <!-- ANTICIPOS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>payments</mat-icon>
+          Anticipos
+        </ng-template>
+
+        <div class="tab-body">
+          @if (loading()) {
+            <app-loading [spinner]="true" message="Cargando anticipos…" />
+          } @else if (empleadosFiltrados().length === 0) {
+            <app-empty-state icon="search_off" message="Sin resultados para la búsqueda" />
+          } @else {
+            @for (e of empleadosFiltrados(); track e.id) {
+              <div class="emp-block">
+                <div class="emp-head">
+                  <div>
+                    <span class="name">{{ e.fullName }}</span>
+                    <span class="muted">{{ e.rut }}</span>
+                  </div>
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    (click)="openAdvance(e)"
+                    [disabled]="saving()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    Agregar anticipo
+                  </button>
+                </div>
+
+                @if (anticiposDe(e.id).length === 0) {
+                  <p class="muted pad">No hay anticipos registrados</p>
+                } @else {
+                  <div class="table-scroll">
+                    <table mat-table [dataSource]="anticiposDe(e.id)" class="data-table">
+                      <ng-container matColumnDef="fecha">
+                        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+                        <td mat-cell *matCellDef="let a">{{ formatDate(a.date) }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="descripcion">
+                        <th mat-header-cell *matHeaderCellDef class="hide-sm">Descripción</th>
+                        <td mat-cell *matCellDef="let a" class="hide-sm">
+                          {{ a.description ?? '-' }}
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="monto">
+                        <th mat-header-cell *matHeaderCellDef class="num-col">Monto</th>
+                        <td mat-cell *matCellDef="let a" class="num-col">
+                          <strong>{{ formatMoney(a.amount) }}</strong>
+                        </td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="acciones">
+                        <th mat-header-cell *matHeaderCellDef class="cell-actions"></th>
+                        <td mat-cell *matCellDef="let a" class="cell-actions">
+                          <button
+                            mat-icon-button
+                            matTooltip="Eliminar"
+                            (click)="deleteAdvance(a)"
+                            [disabled]="saving()"
+                          >
+                            <mat-icon>delete_outline</mat-icon>
+                          </button>
+                        </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="advancesColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: advancesColumns"></tr>
+                    </table>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </mat-tab>
+
+      <!-- LICENCIAS -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <mat-icon>medical_services</mat-icon>
+          Licencias
+        </ng-template>
+
+        <div class="tab-body">
+          @if (loading()) {
+            <app-loading [spinner]="true" message="Cargando licencias…" />
+          } @else if (empleadosFiltrados().length === 0) {
+            <app-empty-state icon="search_off" message="Sin resultados para la búsqueda" />
+          } @else {
+            @for (e of empleadosFiltrados(); track e.id) {
+              <div class="emp-block">
+                <div class="emp-head">
+                  <div>
+                    <span class="name">{{ e.fullName }}</span>
+                    <span class="muted">{{ e.rut }}</span>
+                  </div>
+                  <button
+                    mat-stroked-button
+                    color="primary"
+                    (click)="openLicencia(e)"
+                    [disabled]="saving()"
+                  >
+                    <mat-icon>add</mat-icon>
+                    Agregar licencia
+                  </button>
+                </div>
+
+                @if (licenciasDe(e.id).length === 0) {
+                  <p class="muted pad">No hay licencias registradas</p>
+                } @else {
+                  <div class="table-scroll">
+                    <table mat-table [dataSource]="licenciasDe(e.id)" class="data-table">
+                      <ng-container matColumnDef="inicio">
+                        <th mat-header-cell *matHeaderCellDef>Inicio</th>
+                        <td mat-cell *matCellDef="let l">{{ formatDate(l.startDate) }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="fin">
+                        <th mat-header-cell *matHeaderCellDef>Término</th>
+                        <td mat-cell *matCellDef="let l">{{ formatDate(l.endDate) }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="dias">
+                        <th mat-header-cell *matHeaderCellDef class="num-col">Días</th>
+                        <td mat-cell *matCellDef="let l" class="num-col">{{ l.totalDays }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="motivo">
+                        <th mat-header-cell *matHeaderCellDef class="hide-sm">Motivo</th>
+                        <td mat-cell *matCellDef="let l" class="hide-sm">{{ l.motivo }}</td>
+                      </ng-container>
+
+                      <ng-container matColumnDef="acciones">
+                        <th mat-header-cell *matHeaderCellDef class="cell-actions"></th>
+                        <td mat-cell *matCellDef="let l" class="cell-actions">
+                          <button
+                            mat-icon-button
+                            matTooltip="Eliminar"
+                            (click)="deleteLicencia(l)"
+                            [disabled]="saving()"
+                          >
+                            <mat-icon>delete_outline</mat-icon>
+                          </button>
+                        </td>
+                      </ng-container>
+
+                      <tr mat-header-row *matHeaderRowDef="licenciasColumns"></tr>
+                      <tr mat-row *matRowDef="let row; columns: licenciasColumns"></tr>
+                    </table>
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+  </mat-card>
+</div>

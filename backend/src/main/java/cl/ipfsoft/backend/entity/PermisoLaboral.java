@@ -42,7 +42,7 @@ public class PermisoLaboral {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
+    private Empleado employee;
 
     /** Fecha en que se toma el permiso. Para POR_HORA es el día; junto a horas indica el tiempo. */
     @Column(nullable = false)

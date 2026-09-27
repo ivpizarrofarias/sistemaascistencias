@@ -80,7 +80,7 @@ class PayrollControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 { "startDate": "2026-08-17", "endDate": "2026-08-19",
-                                  "motivo": "Enfermedad común", "employerPays": true }"""))
+                                  "motivo": "Enfermedad común" }"""))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.totalDays").value(3));
     }

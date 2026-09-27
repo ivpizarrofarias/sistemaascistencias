@@ -1,0 +1,56 @@
+<h2 mat-dialog-title>Registrar devolución del permiso</h2>
+
+<mat-dialog-content>
+  <p class="text">
+    Permiso de <strong>{{ permiso.employeeName }}</strong> el
+    <strong>{{ formatDate(permiso.date) }}</strong>
+    ({{ tipoLabel[permiso.tipo]
+    }}@if (porHora) {, {{ permiso.horas }} h} @else {, {{ permiso.dias }} día/s} ).
+  </p>
+  <p class="text muted">
+    Marque el tiempo que el trabajador <strong>ya devolvió</strong>; ese saldo no se descuenta en la
+    liquidación.
+  </p>
+
+  @if (saldoPendiente() <= 0) {
+    <div class="done">
+      <mat-icon>task_alt</mat-icon>
+      <span>El permiso no tiene saldo pendiente.</span>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ porHora ? 'Horas que devuelve ahora' : 'Días que devuelve ahora' }}</mat-label>
+        <input
+          matInput
+          type="number"
+          min="0.01"
+          [max]="porHora ? null : saldoPendiente()"
+          step="any"
+          formControlName="cantidad"
+          (input)="onCantidadChange($any($event.target).value)"
+        />
+        @if (form.controls.cantidad.hasError('required') || form.controls.cantidad.hasError('min')) {
+          <mat-error>Indique un valor mayor a 0</mat-error>
+        }
+      </mat-form-field>
+
+      <p class="hint">
+        @if (porHora) {
+          Solicitadas: {{ permiso.horas }} h · Devueltas antes: {{ permiso.horasDevueltas ?? 0 }} h ·
+          Pendiente: {{ saldoPendiente() }} h
+        } @else {
+          Solicitados: {{ permiso.dias }} día/s · Devueltos antes: {{ permiso.diasDevueltos }} ·
+          Pendiente: {{ saldoPendiente() }} día/s
+        }
+      </p>
+    </form>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cerrar</button>
+  @if (saldoPendiente() > 0) {
+    <button mat-flat-button color="primary" (click)="submit()">Confirmar devolución</button>
+  }
+</mat-dialog-actions>

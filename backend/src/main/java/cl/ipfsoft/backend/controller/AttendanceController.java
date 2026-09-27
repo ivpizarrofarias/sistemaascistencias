@@ -4,8 +4,8 @@ import cl.ipfsoft.backend.dto.attendance.AttendanceResponse;
 import cl.ipfsoft.backend.dto.attendance.AttendanceUpdateRequest;
 import cl.ipfsoft.backend.dto.attendance.MarkRequest;
 import cl.ipfsoft.backend.dto.attendance.MarkResponse;
-import cl.ipfsoft.backend.entity.AppUser;
-import cl.ipfsoft.backend.entity.Role;
+import cl.ipfsoft.backend.entity.Usuario;
+import cl.ipfsoft.backend.entity.Rol;
 import cl.ipfsoft.backend.exception.ForbiddenException;
 import cl.ipfsoft.backend.repository.AppUserRepository;
 import cl.ipfsoft.backend.service.AttendanceService;
@@ -75,9 +75,9 @@ public class AttendanceController {
         // El administrador puede ver las asistencias de cualquier empleado;
         // un empleado solo puede consultar sus propios registros.
         String username = authentication.getName();
-        AppUser user = userRepository.findByUsername(username)
+        Usuario user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ForbiddenException("Usuario no encontrado"));
-        if (user.getRole() != Role.ADMIN) {
+        if (user.getRole() != Rol.ADMIN) {
             if (user.getEmployee() == null || !user.getEmployee().getId().equals(employeeId)) {
                 throw new ForbiddenException("No tiene permisos para ver las asistencias de este empleado");
             }

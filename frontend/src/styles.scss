@@ -1,0 +1,161 @@
+@use '@angular/material' as mat;
+
+// ============================================================================
+// Tema de Material Design 3
+// ============================================================================
+// Paleta azul (primary) con violeta (tertiary) y esquinas redondeadas.
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$violet-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
+
+// ============================================================================
+// Reset y estilos base
+// ============================================================================
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Los iconos de Material Symbols se usan como ligaduras de texto.
+.mat-icon,
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+// ============================================================================
+// Utilidades compartidas
+// ============================================================================
+.page {
+  padding: 24px;
+  margin: 0 auto;
+  width: 100%;
+  // El shell redefine --page-max para que el contenido use todo el ancho
+  // disponible cuando el menú lateral está colapsado.
+  max-width: var(--page-max, 1600px);
+}
+
+// Tabla de datos: header fijo y celdas compactas.
+.data-table {
+  width: 100%;
+}
+
+.data-table .mat-mdc-header-cell {
+  font-weight: 600;
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
+.data-table .mat-mdc-cell {
+  font-size: 0.875rem;
+}
+
+.data-table .cell-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-table .cell-actions button {
+  margin-left: 4px;
+}
+
+// Contenedor con scroll horizontal para tablas anchas en móvil.
+.table-scroll {
+  overflow-x: auto;
+}
+
+// Tarjeta con padding uniforme.
+.card-pad {
+  padding: 20px;
+}
+
+// Grid de KPIs del dashboard.
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+// Estado vacío.
+.empty-state {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-state .material-symbols-outlined {
+  font-size: 48px;
+  color: var(--mat-sys-outline-variant);
+  margin-bottom: 8px;
+}
+
+// Texto numérico tabular para montos y horas.
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+// Chip de estado dentro de una celda.
+.estado-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.estado-chip.ok {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.estado-chip.warn {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.estado-chip.bad {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.estado-chip.neutral {
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}

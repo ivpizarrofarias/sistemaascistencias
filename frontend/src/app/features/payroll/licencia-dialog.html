@@ -1,0 +1,51 @@
+<h2 mat-dialog-title>Registrar licencia médica</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="employee">
+      <mat-icon>badge</mat-icon>
+      <div>
+        <div class="name">{{ data.employee.fullName }}</div>
+        <div class="muted">{{ data.employee.rut }}</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha inicio</mat-label>
+        <input matInput type="date" formControlName="startDate" />
+        @if (form.controls.startDate.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha término</mat-label>
+        <input matInput type="date" formControlName="endDate" />
+        @if (form.controls.endDate.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Motivo</mat-label>
+      <input matInput formControlName="motivo" />
+      @if (form.controls.motivo.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
+    </mat-form-field>
+
+    @if (dias > 0) {
+      <p class="hint">
+        Se descontarán {{ dias }} día/s del sueldo en la liquidación del período: el empleador no paga
+        subsidio por licencia médica.
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()">Guardar</button>
+</mat-dialog-actions>

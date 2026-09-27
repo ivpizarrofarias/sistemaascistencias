@@ -36,14 +36,14 @@ import cl.ipfsoft.backend.app.ui.UiState
 
 /**
  * Pantalla de marcaje (kiosco).
- * Pública: el trabajador digita su RUT y marca el siguiente paso del día.
+ * Pública: el trabajador digita su código de marcaje y marca el siguiente paso del día.
  */
 @Composable
 fun MarkScreen(
     state: UiState,
     onMark: (String) -> Unit,
 ) {
-    var rut by remember { mutableStateOf("") }
+    var codigo by remember { mutableStateOf("") }
 
     Scaffold(
         modifier = Modifier
@@ -80,13 +80,16 @@ fun MarkScreen(
                     state.markResult?.let { mostrarResultado(it) }
 
                     OutlinedTextField(
-                        value = rut,
-                        onValueChange = { rut = it },
-                        label = { Text("RUT del trabajador") },
-                        placeholder = { Text("12.345.678-5") },
+                        value = codigo,
+                        onValueChange = { input ->
+                            // Solo se aceptan dígitos, como máximo 4.
+                            codigo = input.filter { it.isDigit() }.take(4)
+                        },
+                        label = { Text("Código de marcaje") },
+                        placeholder = { Text("4832") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
+                            keyboardType = KeyboardType.NumberPassword,
                             capitalization = KeyboardCapitalization.None,
                         ),
                         modifier = Modifier.fillMaxWidth(),
@@ -96,8 +99,8 @@ fun MarkScreen(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
-                            onClick = { onMark(rut) },
-                            enabled = rut.isNotBlank() && !state.isLoading,
+                            onClick = { onMark(codigo) },
+                            enabled = codigo.length == 4 && !state.isLoading,
                             modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text(if (state.isLoading) "Registrando..." else "Marcar")

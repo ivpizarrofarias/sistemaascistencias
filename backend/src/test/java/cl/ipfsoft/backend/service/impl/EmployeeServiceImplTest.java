@@ -1,7 +1,7 @@
 package cl.ipfsoft.backend.service.impl;
 
 import cl.ipfsoft.backend.dto.employee.EmployeeRequest;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.exception.BusinessException;
 import cl.ipfsoft.backend.mapper.EmployeeMapper;
 import cl.ipfsoft.backend.repository.AdvanceRepository;
@@ -13,6 +13,7 @@ import cl.ipfsoft.backend.repository.LiquidacionRepository;
 import cl.ipfsoft.backend.repository.PermisoLaboralRepository;
 import cl.ipfsoft.backend.repository.WeeklyScheduleRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -83,20 +84,54 @@ class EmployeeServiceImplTest {
         // Simular que no existe el RUT y que el código generado no colisiona.
         when(employeeRepository.existsByRut("11111111-1")).thenReturn(false);
         when(employeeRepository.existsByCode(anyString())).thenReturn(false);
-        when(employeeRepository.save(any(Employee.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(employeeRepository.save(any(Empleado.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var resp = service.create(validRequest());
 
         // El RUT debe quedar normalizado (con guion y DV) y formateado con puntos de miles.
         assertEquals("11.111.111-1", resp.rut());
-        // El empleado recibe automáticamente un código de marcaje: 4 dígitos del RUT + letras del nombre.
+        // El empleado recibe automáticamente un código de marcaje de 4 dígitos.
         assertNotNull(resp.code());
-        assertEquals("1111JUAN", resp.code());
+        assertTrue(resp.code().matches("\\d{4}"), "El código debe tener 4 dígitos, fue " + resp.code());
+    }
+
+    @Test
+    @DisplayName("El código de marcaje es 4 dígitos, único e inmutable")
+    void update_noModificaElCodigoDeMarcaje() {
+        Empleado existente = new Empleado();
+        existente.setId(7L);
+        existente.setRut("11111111-1");
+        existente.setCode("4832");
+        existente.setFirstName("Juan");
+
+        when(employeeRepository.findById(7L)).thenReturn(java.util.Optional.of(existente));
+        when(employeeRepository.findByRut("11111111-1")).thenReturn(java.util.Optional.of(existente));
+        when(employeeRepository.save(any(Empleado.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // Se editan todos los datos editables, incluido el RUT y el nombre.
+        var resp = service.update(7L, validRequest());
+
+        assertEquals("4832", resp.code(),
+                "El código de marcaje es la credencial del trabajador: editar no debe alterarlo");
+    }
+
+    @Test
+    @DisplayName("El código se genera distinto para cada empleado nuevo")
+    void create_codigosDistintosParaCadaEmpleado() {
+        when(employeeRepository.existsByRut(anyString())).thenReturn(false);
+        when(employeeRepository.save(any(Empleado.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        java.util.Set<String> codigos = new java.util.HashSet<>();
+        for (int i = 0; i < 50; i++) {
+            codigos.add(service.create(validRequest()).code());
+        }
+
+        assertEquals(50, codigos.size(), "Los códigos generados deben ser distintos entre sí");
     }
 
     @Test
     void setEnabled_false_deshabilita() {
-        Employee e = new Employee();
+        Empleado e = new Empleado();
         e.setId(1L);
         e.setRut("11111111-1");
         when(employeeRepository.findById(1L)).thenReturn(Optional.of(e));
@@ -108,7 +143,7 @@ class EmployeeServiceImplTest {
 
     @Test
     void setEnabled_true_habilita() {
-        Employee e = new Employee();
+        Empleado e = new Empleado();
         e.setId(1L);
         e.setRut("11111111-1");
         e.setEnabled(false);

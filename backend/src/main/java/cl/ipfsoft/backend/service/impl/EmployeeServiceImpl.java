@@ -3,7 +3,7 @@ package cl.ipfsoft.backend.service.impl;
 import cl.ipfsoft.backend.dto.common.StatusResponse;
 import cl.ipfsoft.backend.dto.employee.EmployeeRequest;
 import cl.ipfsoft.backend.dto.employee.EmployeeResponse;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.exception.BusinessException;
 import cl.ipfsoft.backend.exception.ResourceNotFoundException;
 import cl.ipfsoft.backend.mapper.EmployeeMapper;
@@ -97,16 +97,17 @@ public class EmployeeServiceImpl implements EmployeeService {
         }
 
         // 3. Construir la entidad a partir del request.
-        Employee employee = new Employee();
+        Empleado employee = new Empleado();
         employee.setRut(normalizedRut);
         mapper.applyRequest(employee, request);
 
-        // 4. Generar el código de marcaje único (credencial del empleado para el kiosco).
-        employee.setCode(CodeGenerator.uniqueCode(
-                normalizedRut, request.firstName(), employeeRepository::existsByCode));
+        // 4. Generar el código de marcaje: 4 dígitos aleatorios y únicos. Es la
+        //    credencial del trabajador en el kiosco, por eso no depende del RUT
+        //    ni del nombre y se asigna una sola vez.
+        employee.setCode(CodeGenerator.uniqueCode(employeeRepository::existsByCode));
 
         // 5. Guardar el empleado.
-        Employee saved = employeeRepository.save(employee);
+        Empleado saved = employeeRepository.save(employee);
 
         return mapper.toResponse(saved);
     }
@@ -119,7 +120,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public EmployeeResponse update(Long id, EmployeeRequest request) {
-        Employee employee = getEmployee(id);
+        Empleado employee = getEmployee(id);
 
         // 1. Normalizar RUT y permitir cambiarlo solo si no colisiona con otro empleado.
         String normalizedRut = normalizeRut(request.rut());
@@ -133,6 +134,13 @@ public class EmployeeServiceImpl implements EmployeeService {
         // 2. Aplicar el resto de los campos.
         mapper.applyRequest(employee, request);
 
+        // 3. El código de marcaje es inmutable: se restituye explícitamente para
+        //    que ningun camino futuro lo altere por accidente al editar.
+        if (employee.getCode() == null) {
+            // Solo posible para empleados dados de alta antes de que existiera el código.
+            employee.setCode(CodeGenerator.uniqueCode(employeeRepository::existsByCode));
+        }
+
         return mapper.toResponse(employeeRepository.save(employee));
     }
 
@@ -140,7 +148,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public StatusResponse setEnabled(Long id, boolean enabled) {
-        Employee employee = getEmployee(id);
+        Empleado employee = getEmployee(id);
         employee.setEnabled(enabled);
         employeeRepository.save(employee);
         return StatusResponse.ok(enabled
@@ -152,7 +160,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     @Transactional
     public StatusResponse delete(Long id) {
-        Employee employee = getEmployee(id);
+        Empleado employee = getEmployee(id);
         // Borrado en cascada: primero los registros que dependen del empleado.
         appUserRepository.deleteByEmployee(employee);
         attendanceRepository.deleteAll(attendanceRepository.findByEmployeeIdOrderByDateAsc(id));
@@ -181,7 +189,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     /**
      * Obtiene un empleado por id o lanza excepción si no existe.
      */
-    private Employee getEmployee(Long id) {
+    private Empleado getEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + id));
     }

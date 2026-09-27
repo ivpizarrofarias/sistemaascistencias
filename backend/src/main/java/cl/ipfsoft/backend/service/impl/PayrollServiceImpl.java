@@ -8,9 +8,9 @@ import cl.ipfsoft.backend.dto.payroll.HoraExtraResponse;
 import cl.ipfsoft.backend.dto.payroll.LicenciaRequest;
 import cl.ipfsoft.backend.dto.payroll.LicenciaResponse;
 import cl.ipfsoft.backend.dto.payroll.LiquidacionResponse;
-import cl.ipfsoft.backend.entity.Advance;
-import cl.ipfsoft.backend.entity.Attendance;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Anticipo;
+import cl.ipfsoft.backend.entity.Asistencia;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.entity.FormaCompensacion;
 import cl.ipfsoft.backend.entity.HoraExtra;
 import cl.ipfsoft.backend.entity.LicenciaMedica;
@@ -19,8 +19,8 @@ import cl.ipfsoft.backend.entity.LiquidacionDetalle;
 import cl.ipfsoft.backend.entity.PermisoEstado;
 import cl.ipfsoft.backend.entity.PermisoLaboral;
 import cl.ipfsoft.backend.entity.PermisoTipo;
-import cl.ipfsoft.backend.entity.SystemParam;
-import cl.ipfsoft.backend.entity.WeeklySchedule;
+import cl.ipfsoft.backend.entity.ParametroSistema;
+import cl.ipfsoft.backend.entity.HorarioSemanal;
 import cl.ipfsoft.backend.exception.BusinessException;
 import cl.ipfsoft.backend.exception.ResourceNotFoundException;
 import cl.ipfsoft.backend.mapper.PayrollMapper;
@@ -49,7 +49,8 @@ import java.util.List;
  *
  * El cálculo sigue las normas generales de la liquidación chilena:
  *  - Haberes: sueldo base, gratificación legal, asignación familiar por cargas,
- *    subsidio por licencia médica (días a cargo del empleador).
+ *    licencia médica (todos los días a cargo del trabajador: el empleador no
+ *    paga subsidio por licencia).
  *  - Descuentos: AFP (10%), Seguro de Invalidez y Sobrevivencia, salud (7%),
  *    seguro de cesantía, Impuesto Único de 2ª categoría, descuento por faltas,
  *    anticipos y permisos laborales.
@@ -61,7 +62,6 @@ public class PayrollServiceImpl implements PayrollService {
     // Tasas fijas legales chilenas:
     private static final BigDecimal AFP_PCT = new BigDecimal("0.10");      // 10% cotización previsional
     private static final BigDecimal SALUD_PCT = new BigDecimal("0.07");    // 7% cotización de salud
-    private static final BigDecimal DIA_LICENCIA_EMPLEADOR = new BigDecimal("3"); // hasta 3 días empleador
     private static final BigDecimal DESCUENTO_HORAS_EXTRAS_PCT = BigDecimal.ZERO; // Sin descuento por horas extras
 
     private final EmployeeRepository employeeRepository;
@@ -107,21 +107,16 @@ public class PayrollServiceImpl implements PayrollService {
     /**
      * Calcula, guarda (o recalcula) la liquidación de un empleado para el período.
      * Si ya existía una liquidación para el período, se reemplaza.
+     * <p>
+     * Las horas extra NO se digitizan a mano: se suman desde los registros por
+     * fecha del período ({@link HoraExtra}). La licencia médica no genera haber:
+     * todos sus días se descuentan del sueldo.
+     * </p>
      */
     @Override
     @Transactional
     public LiquidacionResponse createLiquidacion(Long employeeId, int year, int month) {
-        return createLiquidacion(employeeId, year, month, BigDecimal.ZERO);
-    }
-
-    /**
-     * Igual que {@link #createLiquidacion(Long, int, int)} pero permite registrar
-     * las horas extra del período (campo manual del administrador).
-     */
-    @Override
-    @Transactional
-    public LiquidacionResponse createLiquidacion(Long employeeId, int year, int month, BigDecimal horasExtras) {
-        Employee employee = employeeRepository.findById(employeeId)
+        Empleado employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + employeeId));
         if (!employee.isEnabled()) {
             throw new BusinessException("El empleado está deshabilitado y no se le puede generar la liquidación de sueldo.");
@@ -152,10 +147,10 @@ public class PayrollServiceImpl implements PayrollService {
         l.setDiasHabiles(diasHabiles);
 
         // Recuento de asistencia del período.
-        List<Attendance> atts = attendanceRepository
+        List<Asistencia> atts = attendanceRepository
                 .findByEmployeeIdAndDateBetweenOrderByDateAsc(employeeId, start, end);
         int trabajados = 0, inasistencias = 0, licencias = 0;
-        for (Attendance a : atts) {
+        for (Asistencia a : atts) {
             if (a.isComplete() && !a.isAbsence() && !a.isMedicalLicense()) trabajados++;
             if (a.isAbsence()) inasistencias++;
             if (a.isMedicalLicense()) licencias++;
@@ -171,21 +166,24 @@ public class PayrollServiceImpl implements PayrollService {
         BigDecimal horasJornada = horasJornadaDelEmpleado(employee, start);
         BigDecimal valorHora = valorDia.divide(horasJornada, 4, RoundingMode.HALF_UP);
 
-        // ---------- Horas extra (registro manual del administrador) ----------
-        // Se suman las horas extra registradas por fecha dentro del período
-        // (botón "Horas extra" de la lista de empleados) más las horas extra
-        // opcionales que se puedan enviar en la solicitud.
-        BigDecimal horasExtraRegistradas = horaExtraRepository
-                .findByEmployeeIdAndDateBetweenOrderByDateAsc(employeeId, start, end)
-                .stream().map(HoraExtra::getHoras).reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal horasExtra = (horasExtras != null ? horasExtras : BigDecimal.ZERO)
-                .add(horasExtraRegistradas);
-        if (horasExtra.signum() < 0) {
+        // ---------- Horas extra ----------
+        // Única fuente: los registros de horas extra por fecha del período
+        // (botón "Horas extra" de la lista de empleados).
+        // El monto es el que ingresa el administrador en cada registro y se suma
+        // tal cual: no se recalcula con el valor hora ni se aplica multiplicador,
+        // para que la liquidación muestre exactamente el monto acordado.
+        List<HoraExtra> horasExtraDelPeriodo = horaExtraRepository
+                .findByEmployeeIdAndDateBetweenOrderByDateAsc(employeeId, start, end);
+        BigDecimal horasExtra = horasExtraDelPeriodo.stream()
+                .map(HoraExtra::getHoras)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal montoHorasExtra = horasExtraDelPeriodo.stream()
+                .map(he -> he.getMonto() != null ? he.getMonto() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+        if (horasExtra.signum() < 0 || montoHorasExtra.signum() < 0) {
             throw new BusinessException("Las horas extra no pueden ser negativas.");
         }
-        BigDecimal horasExtraMult = param(SystemParam.HORAS_EXTRA_MULT, "1.5");
-        BigDecimal montoHorasExtra = valorHora.multiply(horasExtra).multiply(horasExtraMult)
-                .setScale(0, RoundingMode.HALF_UP);
         l.setHorasExtras(horasExtra);
         l.setMontoHorasExtras(montoHorasExtra);
 
@@ -195,7 +193,7 @@ public class PayrollServiceImpl implements PayrollService {
         l.setSueldoBase(employee.getBaseSalary());
 
         // Gratificación legal (15% del sueldo, proporcional a días trabajados).
-        BigDecimal gratificacionPct = param(SystemParam.GRATIFICACION_PCT, "0.15");
+        BigDecimal gratificacionPct = param(ParametroSistema.GRATIFICACION_PCT, "0.15");
         BigDecimal gratificacion = employee.getBaseSalary()
                 .multiply(gratificacionPct)
                 .multiply(BigDecimal.valueOf(trabajados))
@@ -210,28 +208,21 @@ public class PayrollServiceImpl implements PayrollService {
         }
 
         // Bono de movilización (obligatorio).
-        BigDecimal bonoMovilizacion = param(SystemParam.BONO_MOVILIZACION, "30000");
+        BigDecimal bonoMovilizacion = param(ParametroSistema.BONO_MOVILIZACION, "30000");
         l.setBonoMovilizacion(bonoMovilizacion);
 
-        // Subsidio por licencia médica: días a cargo del empleador (hasta 3 por licencia).
-        // Los días de licencia que el empleador NO paga se descuentan del sueldo.
-        BigDecimal subsidioLicencia = BigDecimal.ZERO;
+        // Licencia médica: TODOS los días a cargo del trabajador.
+        // Por política de la empresa el empleador NO paga subsidio de licencia
+        // médica, así que no se genera haber por días de licencia y cada día del
+        // período se descuenta del sueldo.
         int descuentoLicenciaDias = 0;
         List<LicenciaMedica> licenciasPeriodo = licenciaRepository.findByEmployeeId(employeeId).stream()
                 .filter(lm -> overlaps(lm.getStartDate(), lm.getEndDate(), start, end))
                 .toList();
         for (LicenciaMedica lm : licenciasPeriodo) {
-            int overlap = (int) java.time.temporal.ChronoUnit.DAYS.between(
+            descuentoLicenciaDias += (int) java.time.temporal.ChronoUnit.DAYS.between(
                     max(lm.getStartDate(), start), min(lm.getEndDate(), end)) + 1;
-            int empleadorDias = 0;
-            if (lm.isEmployerPays()) {
-                empleadorDias = (int) Math.min(overlap, DIA_LICENCIA_EMPLEADOR.intValue());
-                subsidioLicencia = subsidioLicencia.add(valorDia.multiply(BigDecimal.valueOf(empleadorDias)));
-            }
-            // Días de licencia que quedan a cargo del trabajador (no pagados por el empleador).
-            descuentoLicenciaDias += (overlap - empleadorDias);
         }
-        l.setSubsidioLicenciaEmpleador(subsidioLicencia);
 
         BigDecimal descuentoLicencia = valorDia.multiply(BigDecimal.valueOf(descuentoLicenciaDias))
                 .setScale(0, RoundingMode.HALF_UP);
@@ -248,7 +239,7 @@ public class PayrollServiceImpl implements PayrollService {
 
         // AFP + SIS (previsional).
         BigDecimal afp = baseImponible.multiply(AFP_PCT).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal sisPct = param(SystemParam.SIS_PCT, "0.0144");
+        BigDecimal sisPct = param(ParametroSistema.SIS_PCT, "0.0144");
         BigDecimal sis = baseImponible.multiply(sisPct).setScale(0, RoundingMode.HALF_UP);
         l.setAfp(afp);
         l.setSis(sis);
@@ -258,7 +249,7 @@ public class PayrollServiceImpl implements PayrollService {
         l.setSalud(salud);
 
         // Cesantía (parte del trabajador).
-        BigDecimal cesPct = param(SystemParam.CESANTIA_EMPLEADO_PCT, "0.006");
+        BigDecimal cesPct = param(ParametroSistema.CESANTIA_EMPLEADO_PCT, "0.006");
         BigDecimal cesantia = baseImponible.multiply(cesPct).setScale(0, RoundingMode.HALF_UP);
         l.setCesantia(cesantia);
 
@@ -278,7 +269,7 @@ public class PayrollServiceImpl implements PayrollService {
         // Anticipos del período.
         BigDecimal anticipos = advanceRepository
                 .findByEmployeeIdAndDateBetweenOrderByDateAsc(employeeId, start, end)
-                .stream().map(Advance::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                .stream().map(Anticipo::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         l.setAnticipos(anticipos);
 
         // Impuesto Único de 2ª categoría (sobre base gravada = imponible - previsional - salud).
@@ -292,7 +283,6 @@ public class PayrollServiceImpl implements PayrollService {
                 .add(l.getGratificacion())
                 .add(l.getAsignacionFamiliar())
                 .add(l.getBonoMovilizacion())
-                .add(l.getSubsidioLicenciaEmpleador())
                 .add(l.getMontoHorasExtras())
                 .add(l.getOtrosHaberes()));
         l.setTotalDescuentos(afp.add(sis).add(salud).add(impuestoUnico).add(cesantia)
@@ -308,8 +298,6 @@ public class PayrollServiceImpl implements PayrollService {
             addDetalle(l, "Asignación familiar (" + employee.getDependents() + " cargas)", true, l.getAsignacionFamiliar());
         // Bono de movilización (obligatorio).
         addDetalle(l, "Bono de movilización", true, l.getBonoMovilizacion());
-        if (l.getSubsidioLicenciaEmpleador().signum() > 0)
-            addDetalle(l, "Subsidio licencia médica (días empleador)", true, l.getSubsidioLicenciaEmpleador());
         if (montoHorasExtra.signum() > 0)
             addDetalle(l, "Horas extra (" + horasExtra.stripTrailingZeros().toPlainString() + " h)", true, montoHorasExtra);
         addDetalle(l, "AFP (" + employee.getAfpFund() + " 10%)", false, afp);
@@ -317,10 +305,12 @@ public class PayrollServiceImpl implements PayrollService {
         addDetalle(l, "Salud (7%)", false, salud);
         addDetalle(l, "Cesantía (trabajador)", false, cesantia);
         addDetalle(l, "Impuesto Único 2ª categoría", false, impuestoUnico);
+        // Las horas extra no llevan descuento (constante en 0): la línea solo
+        // aparece en el detalle si algún día se cambia ese porcentaje.
         if (l.getDescuentoHorasExtras().signum() > 0)
-            addDetalle(l, "Descuento por horas extra (10%)", false, l.getDescuentoHorasExtras());
+            addDetalle(l, "Descuento por horas extra (" + DESCUENTO_HORAS_EXTRAS_PCT.multiply(BigDecimal.valueOf(100)).stripTrailingZeros().toPlainString() + "%)", false, l.getDescuentoHorasExtras());
         if (descuentoFaltas.signum() > 0) addDetalle(l, "Descuento por inasistencia (" + inasistencias + " días)", false, descuentoFaltas);
-        if (descuentoLicencia.signum() > 0) addDetalle(l, "Descuento por licencia médica (" + descuentoLicenciaDias + " días no pagados)", false, descuentoLicencia);
+        if (descuentoLicencia.signum() > 0) addDetalle(l, "Descuento por licencia médica (" + descuentoLicenciaDias + " días a cargo del trabajador)", false, descuentoLicencia);
         if (anticipos.signum() > 0) addDetalle(l, "Anticipo de sueldo", false, anticipos);
         if (descuentoPermisos.signum() > 0) addDetalle(l, "Descuento por permisos laborales", false, descuentoPermisos);
 
@@ -331,9 +321,9 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public int liquidarTodos(int year, int month) {
-        List<Employee> employees = employeeRepository.findAll();
+        List<Empleado> employees = employeeRepository.findAll();
         int generadas = 0;
-        for (Employee e : employees) {
+        for (Empleado e : employees) {
             createLiquidacion(e.getId(), year, month);
             generadas++;
         }
@@ -384,7 +374,7 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public AdvanceResponse addAdvance(Long employeeId, AdvanceRequest request) {
-        Employee employee = employeeRepository.findById(employeeId)
+        Empleado employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + employeeId));
         if (request.amount() == null || request.amount().signum() <= 0) {
             throw new BusinessException("El monto del anticipo debe ser mayor a 0");
@@ -397,7 +387,7 @@ public class PayrollServiceImpl implements PayrollService {
         BigDecimal sumaPeriodo = advanceRepository
                 .findByEmployeeIdAndDateBetweenOrderByDateAsc(
                         employeeId, periodo.atDay(1), periodo.atEndOfMonth())
-                .stream().map(Advance::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+                .stream().map(Anticipo::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal tope = employee.getBaseSalary()
                 .multiply(new BigDecimal("0.15")).setScale(0, RoundingMode.HALF_UP);
         if (sumaPeriodo.add(request.amount()).compareTo(tope) > 0) {
@@ -405,7 +395,7 @@ public class PayrollServiceImpl implements PayrollService {
                     "El total de anticipos del período supera el 15% del sueldo base (" + tope + " CLP)");
         }
 
-        Advance a = new Advance();
+        Anticipo a = new Anticipo();
         a.setEmployee(employee);
         mapper.applyAdvanceRequest(a, request);
         return mapper.toAdvanceResponse(advanceRepository.save(a));
@@ -421,7 +411,7 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public StatusResponse deleteAdvance(Long advanceId) {
-        Advance a = advanceRepository.findById(advanceId)
+        Anticipo a = advanceRepository.findById(advanceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Anticipo no encontrado con id " + advanceId));
         advanceRepository.delete(a);
         return StatusResponse.ok("Anticipo eliminado");
@@ -434,7 +424,7 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public LicenciaResponse addLicencia(Long employeeId, LicenciaRequest request) {
-        Employee employee = employeeRepository.findById(employeeId)
+        Empleado employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + employeeId));
         if (request.endDate().isBefore(request.startDate())) {
             throw new BusinessException("La fecha de término debe ser posterior a la de inicio");
@@ -468,7 +458,7 @@ public class PayrollServiceImpl implements PayrollService {
     @Override
     @Transactional
     public HoraExtraResponse addHoraExtra(Long employeeId, HoraExtraRequest request) {
-        Employee employee = employeeRepository.findById(employeeId)
+        Empleado employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + employeeId));
         if (!employee.isEnabled()) {
             throw new BusinessException("El empleado está deshabilitado y no se pueden registrar horas extra.");
@@ -548,7 +538,7 @@ public class PayrollServiceImpl implements PayrollService {
      */
     private BigDecimal calcularImpuestoUnico(BigDecimal baseGravada) {
         if (baseGravada.signum() <= 0) return BigDecimal.ZERO;
-        BigDecimal utm = param(SystemParam.UTM, "71721");
+        BigDecimal utm = param(ParametroSistema.UTM, "71721");
         if (utm.signum() <= 0) return BigDecimal.ZERO;
 
         // Tramos legales (en UTM): {desdeUTM, hastaUTM, factor, rebajaUTM}
@@ -596,7 +586,7 @@ public class PayrollServiceImpl implements PayrollService {
     /** Obtiene un parámetro del sistema o usa un valor por defecto. */
     private BigDecimal param(String key, String defaultValue) {
         return paramRepository.findById(key)
-                .map(SystemParam::getValue)
+                .map(ParametroSistema::getValue)
                 .orElseGet(() -> new BigDecimal(defaultValue));
     }
 
@@ -627,8 +617,8 @@ public class PayrollServiceImpl implements PayrollService {
      * Horas de la jornada diaria del empleado, tomadas del horario semanal que
      * rige en la fecha de referencia. Si no hay horario definido se asume 8h.
      */
-    private BigDecimal horasJornadaDelEmpleado(Employee employee, LocalDate refDate) {
-        WeeklySchedule ws = weeklyScheduleRepository
+    private BigDecimal horasJornadaDelEmpleado(Empleado employee, LocalDate refDate) {
+        HorarioSemanal ws = weeklyScheduleRepository
                 .findByEmployeeAndStartDate(employee, ScheduleUtils.mondayOf(refDate))
                 .orElse(null);
         return BigDecimal.valueOf(ScheduleUtils.hoursPerDay(ws, 8));

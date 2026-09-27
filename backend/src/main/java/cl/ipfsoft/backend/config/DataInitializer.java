@@ -1,9 +1,9 @@
 package cl.ipfsoft.backend.config;
 
-import cl.ipfsoft.backend.entity.AppUser;
-import cl.ipfsoft.backend.entity.Employee;
-import cl.ipfsoft.backend.entity.Role;
-import cl.ipfsoft.backend.entity.SystemParam;
+import cl.ipfsoft.backend.entity.Usuario;
+import cl.ipfsoft.backend.entity.Empleado;
+import cl.ipfsoft.backend.entity.Rol;
+import cl.ipfsoft.backend.entity.ParametroSistema;
 import cl.ipfsoft.backend.repository.AppUserRepository;
 import cl.ipfsoft.backend.repository.EmployeeRepository;
 import cl.ipfsoft.backend.repository.SystemParamRepository;
@@ -57,10 +57,10 @@ public class DataInitializer implements CommandLineRunner {
      */
     private void createDefaultAdmin() {
         if (!userRepository.existsByUsername(adminUsername)) {
-            AppUser admin = new AppUser();
+            Usuario admin = new Usuario();
             admin.setUsername(adminUsername);
             admin.setPassword(passwordEncoder.encode(adminPassword));
-            admin.setRole(Role.ADMIN);
+            admin.setRole(Rol.ADMIN);
             admin.setEnabled(true);
             userRepository.save(admin);
             System.out.println(">>> Usuario admin creado: " + adminUsername);
@@ -72,19 +72,19 @@ public class DataInitializer implements CommandLineRunner {
      * basados en la legislación laboral chilena vigente.
      */
     private void createDefaultParams() {
-        put(SystemParam.UF, "Valor de la UF en pesos", new BigDecimal("38000.00"));
-        put(SystemParam.UTM, "Valor de la UTM en pesos (para Impuesto Único)", new BigDecimal("67000.00"));
-        put(SystemParam.ASIGNACION_FAMILIAR_TRAMO1, "Asignación familiar tramo 1 (por carga, en CLP)",
+        put(ParametroSistema.UF, "Valor de la UF en pesos", new BigDecimal("38000.00"));
+        put(ParametroSistema.UTM, "Valor de la UTM en pesos (para Impuesto Único)", new BigDecimal("67000.00"));
+        put(ParametroSistema.ASIGNACION_FAMILIAR_TRAMO1, "Asignación familiar tramo 1 (por carga, en CLP)",
                 new BigDecimal("21569.00"));
-        put(SystemParam.GRATIFICACION_PCT, "Porcentaje de gratificación legal (15% o 4.25 1/M)",
+        put(ParametroSistema.GRATIFICACION_PCT, "Porcentaje de gratificación legal (15% o 4.25 1/M)",
                 new BigDecimal("0.15"));
-        put(SystemParam.SIS_PCT, "Seguro de Invalidez y Sobrevivencia (porcentaje)",
+        put(ParametroSistema.SIS_PCT, "Seguro de Invalidez y Sobrevivencia (porcentaje)",
                 new BigDecimal("0.0144"));
-        put(SystemParam.CESANTIA_EMPLEADO_PCT, "Seguro de Cesantía - parte del trabajador (0.6%)",
+        put(ParametroSistema.CESANTIA_EMPLEADO_PCT, "Seguro de Cesantía - parte del trabajador (0.6%)",
                 new BigDecimal("0.006"));
-        put(SystemParam.HORAS_EXTRA_MULT, "Multiplicador de las horas extra sobre el valor hora",
+        put(ParametroSistema.HORAS_EXTRA_MULT, "Multiplicador de las horas extra sobre el valor hora",
                 new BigDecimal("1.5"));
-        put(SystemParam.BONO_MOVILIZACION, "Bono de movilización obligatorio (CLP)",
+        put(ParametroSistema.BONO_MOVILIZACION, "Bono de movilización obligatorio (CLP)",
                 new BigDecimal("30000.00"));
     }
 
@@ -93,19 +93,22 @@ public class DataInitializer implements CommandLineRunner {
      */
     private void put(String key, String description, BigDecimal value) {
         if (!paramRepository.existsById(key)) {
-            paramRepository.save(new SystemParam(key, description, value));
+            paramRepository.save(new ParametroSistema(key, description, value));
         }
     }
 
     /**
-     * Asigna un código de marcaje único a todos los empleados que aún no lo tienen
-     * (registros creados antes de esta funcionalidad).
+     * Asigna un código de marcaje de 4 dígitos a los empleados que no tienen uno
+     * válido: los registros antiguos que aún usan el formato anterior (4 dígitos
+     * del RUT + letras) y los que nunca lo tuvieron.
+     *
+     * Es idempotente: solo toca a quienes no cumplen el formato, así que puede
+     * ejecutarse en cada arranque sin alterar los códigos ya buenos.
      */
     private void backfillEmployeeCodes() {
         employeeRepository.findAll().forEach(e -> {
-            if (e.getCode() == null || e.getCode().isBlank()) {
-                e.setCode(CodeGenerator.uniqueCode(
-                        e.getRut(), e.getFirstName(), employeeRepository::existsByCode));
+            if (!CodeGenerator.esCodigoValido(e.getCode())) {
+                e.setCode(CodeGenerator.uniqueCode(employeeRepository::existsByCode));
                 employeeRepository.save(e);
             }
         });

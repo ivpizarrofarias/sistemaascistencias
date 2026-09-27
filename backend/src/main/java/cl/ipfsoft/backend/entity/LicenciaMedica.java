@@ -32,7 +32,7 @@ public class LicenciaMedica {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
+    private Empleado employee;
 
     @Column(nullable = false)
     private LocalDate startDate;
@@ -42,8 +42,4 @@ public class LicenciaMedica {
 
     @Column(nullable = false, length = 200)
     private String motivo;
-
-    /** Días a cargo del empleador hasta el tope legal (subsidio por licencia). */
-    @Column(nullable = false)
-    private boolean employerPays = true;
 }

@@ -24,7 +24,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Controlador de remuneraciones (liquidaciones, anticipos y licencias médicas).
@@ -43,15 +49,18 @@ public class PayrollController {
 
     // ---- Liquidaciones ----
 
-    /** Genera (o recalcula) la liquidación de un empleado para un período (admin). */
+    /**
+     * Genera (o recalcula) la liquidación de un empleado para un período (admin).
+     * Las horas extra se toman de los registros por fecha del período; no se aceptan
+     * a mano para evitar duplicarlas.
+     */
     @PostMapping("/liquidaciones/employee/{employeeId}")
     @PreAuthorize("hasRole('ADMIN')")
     public LiquidacionResponse createLiquidacion(
             @PathVariable Long employeeId,
             @RequestParam int year,
-            @RequestParam int month,
-            @RequestParam(required = false) java.math.BigDecimal horasExtras) {
-        return payrollService.createLiquidacion(employeeId, year, month, horasExtras);
+            @RequestParam int month) {
+        return payrollService.createLiquidacion(employeeId, year, month);
     }
 
     /** Genera las liquidaciones de todos los empleados de un período (admin). */
@@ -77,11 +86,40 @@ public class PayrollController {
     /** Descarga el PDF de una liquidación por id (empleado o admin). */
     @GetMapping("/liquidaciones/{id}/pdf")
     public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
+        LiquidacionResponse l = payrollService.getLiquidacion(id);
         byte[] pdf = payrollService.generateLiquidacionPdf(id);
+        String archivo = nombreArchivoLiquidacion(l);
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=liquidacion-" + id + ".pdf")
+                // Se envía la versión ASCII como respaldo y la real en UTF-8 (RFC 5987)
+                // para que el navegador conserve tildes y la "ñ".
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + ascii(archivo)
+                        + "\"; filename*=UTF-8''" + urlEncoder(archivo))
                 .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
                 .body(pdf);
+    }
+
+    /** Nombre del PDF: Liquidación_Javiera_Muñoz_Septiembre_2026.pdf */
+    private String nombreArchivoLiquidacion(LiquidacionResponse l) {
+        String nombre = l.employeeName().trim().replaceAll("\\s+", "_");
+        Locale es = new Locale("es", "CL");
+        String mes = YearMonth.of(l.periodYear(), l.periodMonth())
+                .format(DateTimeFormatter.ofPattern("MMMM", es));
+        mes = mes.substring(0, 1).toUpperCase(es) + mes.substring(1);
+        return "Liquidación_" + nombre + "_" + mes + "_" + l.periodYear() + ".pdf";
+    }
+
+    /** Sustituye todo lo que no sea ASCII por su equivalente sin acento. */
+    private String ascii(String texto) {
+        return Normalizer.normalize(texto, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "")
+                .replaceAll("[^A-Za-z0-9._-]", "_");
+    }
+
+    private String urlEncoder(String texto) {
+        return URLEncoder.encode(texto, StandardCharsets.UTF_8)
+                .replace("+", "%20")
+                .replace("*", "%2A")
+                .replace("%7E", "~");
     }
 
     /** Marca una liquidación como pagada (admin). */

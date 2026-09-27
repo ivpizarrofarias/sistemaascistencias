@@ -2,7 +2,7 @@ package cl.ipfsoft.backend.service.impl;
 
 import cl.ipfsoft.backend.dto.permiso.DevolucionRequest;
 import cl.ipfsoft.backend.dto.permiso.PermisoLaboralRequest;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.entity.FormaCompensacion;
 import cl.ipfsoft.backend.entity.PermisoEstado;
 import cl.ipfsoft.backend.entity.PermisoLaboral;
@@ -37,12 +37,12 @@ class PermisoLaboralServiceImplTest {
     @Mock EmployeeRepository employeeRepository;
 
     PermisoLaboralServiceImpl service;
-    Employee employee;
+    Empleado employee;
 
     @BeforeEach
     void setUp() {
         service = new PermisoLaboralServiceImpl(permisoRepository, employeeRepository, new PermisoMapper());
-        employee = new Employee();
+        employee = new Empleado();
         employee.setId(1L);
         employee.setFirstName("Juan");
         employee.setLastName("Perez");

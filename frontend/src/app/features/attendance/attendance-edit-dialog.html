@@ -1,0 +1,63 @@
+<h2 mat-dialog-title>Editar asistencia</h2>
+
+<mat-dialog-content>
+  <p class="who">
+    <strong>{{ attendance.employeeName }}</strong>
+    <span class="muted">({{ attendance.rut }})</span>
+    <span class="muted"> · {{ dateLabel }}</span>
+  </p>
+
+  <div class="time-grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Entrada</mat-label>
+      <input
+        matInput
+        type="time"
+        [value]="entryTime()"
+        (input)="set('entryTime', $any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Salida a colación</mat-label>
+      <input
+        matInput
+        type="time"
+        [value]="colacionSalida1()"
+        (input)="set('colacionSalida1', $any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Entrada de colación</mat-label>
+      <input
+        matInput
+        type="time"
+        [value]="colacionEntrada1()"
+        (input)="set('colacionEntrada1', $any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Salida</mat-label>
+      <input
+        matInput
+        type="time"
+        [value]="exitTime()"
+        (input)="set('exitTime', $any($event.target).value)"
+      />
+    </mat-form-field>
+  </div>
+
+  @if (attendance.adminCorrected) {
+    <div class="info-box">
+      <mat-icon>verified_user</mat-icon>
+      <span>Este registro fue corregido manualmente por un administrador.</span>
+    </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()">Guardar</button>
+</mat-dialog-actions>

@@ -1,0 +1,117 @@
+<h2 mat-dialog-title>Nuevo permiso</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="submit()" class="form">
+    <mat-form-field appearance="outline">
+      <mat-label>Empleado</mat-label>
+      <mat-select formControlName="employeeId">
+        <mat-option [value]="0" disabled>Seleccione un empleado</mat-option>
+        @for (e of data.employees; track e.id) {
+          <mat-option [value]="e.id">{{ e.fullName }} ({{ e.rut }})</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.employeeId.hasError('required')) {
+        <mat-error>Seleccione un empleado</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha de inicio</mat-label>
+        <input
+          matInput
+          type="date"
+          formControlName="date"
+          (change)="onDateChange($any($event.target).value)"
+        />
+        @if (form.controls.date.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo</mat-label>
+        <mat-select
+          formControlName="tipo"
+          [value]="tipo()"
+          (valueChange)="onTipoChange($event)"
+        >
+          <mat-option value="POR_HORA">{{ tipoLabel.POR_HORA }}</mat-option>
+          <mat-option value="POR_DIA">{{ tipoLabel.POR_DIA }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (tipo() === 'POR_HORA') {
+      <mat-form-field appearance="outline">
+        <mat-label>Horas de ausencia</mat-label>
+        <input matInput type="number" min="0.01" step="any" formControlName="horas" />
+        <mat-hint>Cantidad de horas que el empleado estará ausente.</mat-hint>
+        @if (form.controls.horas.hasError('min')) {
+          <mat-error>Mínimo 0.01 horas</mat-error>
+        }
+      </mat-form-field>
+    } @else {
+      <mat-form-field appearance="outline">
+        <mat-label>Días de permiso</mat-label>
+        <input
+          matInput
+          type="number"
+          min="1"
+          step="1"
+          formControlName="dias"
+          (input)="onDiasChange($any($event.target).value)"
+        />
+        @if (form.controls.dias.hasError('min')) {
+          <mat-error>Mínimo 1 día</mat-error>
+        }
+      </mat-form-field>
+
+      @if (fechas().length > 0) {
+        <div class="preview">
+          <span class="preview-label">Fechas con permiso</span>
+          <ul>
+            @for (f of fechas(); track f) {
+              <li>{{ formatDate(f) }}</li>
+            }
+          </ul>
+        </div>
+      } @else {
+        <p class="hint">Indique la cantidad de días para ver las fechas concretas del permiso.</p>
+      }
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Motivo</mat-label>
+      <input matInput formControlName="motivo" />
+      @if (form.controls.motivo.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Compensación</mat-label>
+      <mat-select
+        formControlName="formaCompensacion"
+        [value]="compensacion()"
+        (valueChange)="onCompensacionChange($event)"
+      >
+        @for (entry of compensacionEntries; track entry[0]) {
+          <mat-option [value]="entry[0]">{{ entry[1] }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    @if (compensacion() === 'DEVOLVER') {
+      <p class="hint">
+        Si el empleado no devuelve el tiempo (parcial o totalmente), el saldo pendiente se descuenta
+        en la liquidación.
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()">Guardar permiso</button>
+</mat-dialog-actions>

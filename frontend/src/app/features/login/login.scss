@@ -1,0 +1,145 @@
+.login-page {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 100vh;
+  background: var(--mat-sys-surface-container-lowest);
+}
+
+// ---------------------------------------------------------------------------
+// Panel izquierdo: identidad visual
+// ---------------------------------------------------------------------------
+.login-visual {
+  display: grid;
+  place-items: center;
+  padding: 48px;
+  color: #fff;
+  background: linear-gradient(150deg, #0b57a4 0%, #10428a 45%, #4a3a8f 100%);
+}
+
+.visual-inner {
+  max-width: 420px;
+}
+
+.visual-logo {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  margin-bottom: 24px;
+}
+
+.login-visual h1 {
+  margin: 0 0 12px;
+  font-size: 2.1rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.login-visual p {
+  margin: 0 0 28px;
+  font-size: 1rem;
+  line-height: 1.6;
+  opacity: 0.88;
+}
+
+.visual-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.visual-points li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.92rem;
+}
+
+.visual-points mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+// ---------------------------------------------------------------------------
+// Panel derecho: formulario
+// ---------------------------------------------------------------------------
+.login-panel {
+  display: grid;
+  place-items: center;
+  padding: 32px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 20px;
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.login-error mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.login-submit {
+  height: 48px;
+  margin-top: 8px;
+  border-radius: 24px;
+}
+
+.login-submit mat-spinner {
+  display: inline-block;
+  margin-right: 10px;
+  vertical-align: middle;
+}
+
+.login-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.login-hint mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+// ---------------------------------------------------------------------------
+// Responsive: en pantallas chicas se oculta el panel visual
+// ---------------------------------------------------------------------------
+@media (max-width: 900px) {
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-visual {
+    display: none;
+  }
+}

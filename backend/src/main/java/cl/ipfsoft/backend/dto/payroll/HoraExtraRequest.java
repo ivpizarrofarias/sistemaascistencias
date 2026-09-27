@@ -6,9 +6,15 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+/**
+ * @param monto monto en CLP a pagar por estas horas extra. Es el valor exacto
+ *              que se mostrará en la liquidación.
+ */
 public record HoraExtraRequest(
         @NotNull(message = "La fecha de las horas extra es obligatoria") LocalDate date,
         @NotNull(message = "La cantidad de horas es obligatoria")
-        @DecimalMin(value = "0.01", message = "Las horas extra deben ser mayores a 0") BigDecimal horas
+        @DecimalMin(value = "0.01", message = "Las horas extra deben ser mayores a 0") BigDecimal horas,
+        @NotNull(message = "El monto de las horas extra es obligatorio")
+        @DecimalMin(value = "1", message = "El monto de las horas extra debe ser mayor a 0") BigDecimal monto
 ) {
 }

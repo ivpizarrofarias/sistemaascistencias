@@ -1,0 +1,80 @@
+<mat-sidenav-container
+  #container
+  class="shell-container"
+  [hasBackdrop]="isMobile()"
+  (transitionend)="onSidenavTransitionEnd($event)"
+>
+  <mat-sidenav
+    class="shell-sidenav"
+    [class.rail]="collapsed() && !isMobile()"
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="opened()"
+    [fixedInViewport]="isMobile()"
+    [disableClose]="!isMobile()"
+  >
+    <div class="brand">
+      <mat-icon class="brand-logo">event_available</mat-icon>
+      @if (!collapsed()) {
+        <div class="brand-text">
+          <span class="brand-title">Asistencias</span>
+          <span class="brand-sub">y Liquidaciones</span>
+        </div>
+      }
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list class="nav-list">
+      @for (item of visibleItems(); track item.path) {
+        <a
+          mat-list-item
+          [routerLink]="item.path"
+          routerLinkActive="active-link"
+          [routerLinkActiveOptions]="{ exact: false }"
+          [matTooltip]="collapsed() ? item.label : ''"
+          matTooltipPosition="right"
+          (click)="closeOnMobile()"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell-content">
+    <mat-toolbar class="shell-toolbar">
+      <button
+        mat-icon-button
+        (click)="toggle()"
+        [attr.aria-label]="collapsed() ? 'Expandir menú' : 'Colapsar menú'"
+      >
+        <mat-icon>{{ collapsed() ? 'menu' : 'menu_open' }}</mat-icon>
+      </button>
+
+      <span class="toolbar-spacer"></span>
+
+      <button mat-button [matMenuTriggerFor]="userMenu" class="user-button">
+        <mat-icon>account_circle</mat-icon>
+        <span class="user-name">{{ displayName() }}</span>
+        <mat-icon class="user-caret">arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #userMenu="matMenu" xPosition="before">
+        <div class="menu-user" (click)="$event.stopPropagation()">
+          <strong>{{ displayName() }}</strong>
+          <span class="menu-role">{{ roleLabel() }}</span>
+        </div>
+        <mat-divider />
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="shell-main" [class.rail]="collapsed() && !isMobile()">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

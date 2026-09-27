@@ -99,7 +99,6 @@ data class LiquidacionResponse(
     @SerializedName("gratificacion") val gratificacion: Double?,
     @SerializedName("asignacionFamiliar") val asignacionFamiliar: Double?,
     @SerializedName("bonoMovilizacion") val bonoMovilizacion: Double?,
-    @SerializedName("subsidioLicenciaEmpleador") val subsidioLicenciaEmpleador: Double?,
     @SerializedName("horasExtras") val horasExtras: Double?,
     @SerializedName("montoHorasExtras") val montoHorasExtras: Double?,
     @SerializedName("otrosHaberes") val otrosHaberes: Double?,

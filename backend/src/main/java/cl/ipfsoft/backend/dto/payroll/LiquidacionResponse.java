@@ -19,7 +19,6 @@ public record LiquidacionResponse(
         BigDecimal gratificacion,
         BigDecimal asignacionFamiliar,
         BigDecimal bonoMovilizacion,
-        BigDecimal subsidioLicenciaEmpleador,
         BigDecimal horasExtras,
         BigDecimal montoHorasExtras,
         BigDecimal otrosHaberes,

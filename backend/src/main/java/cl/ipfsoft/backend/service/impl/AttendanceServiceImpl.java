@@ -4,10 +4,10 @@ import cl.ipfsoft.backend.dto.attendance.AttendanceResponse;
 import cl.ipfsoft.backend.dto.attendance.AttendanceUpdateRequest;
 import cl.ipfsoft.backend.dto.attendance.MarkRequest;
 import cl.ipfsoft.backend.dto.attendance.MarkResponse;
-import cl.ipfsoft.backend.entity.Attendance;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Asistencia;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.entity.LicenciaMedica;
-import cl.ipfsoft.backend.entity.WeeklySchedule;
+import cl.ipfsoft.backend.entity.HorarioSemanal;
 import cl.ipfsoft.backend.exception.BusinessException;
 import cl.ipfsoft.backend.exception.ResourceNotFoundException;
 import cl.ipfsoft.backend.mapper.AttendanceMapper;
@@ -74,7 +74,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Transactional
     public MarkResponse mark(MarkRequest request) {
         // 1. Localizar y validar al empleado por su RUT (código).
-        Employee employee = resolveEmployee(request.code());
+        Empleado employee = resolveEmployee(request.code());
 
         LocalDate today = LocalDate.now(clock);
 
@@ -104,7 +104,7 @@ public class AttendanceServiceImpl implements AttendanceService {
         });
 
         // 5. Buscar o crear el registro de asistencia de HOY.
-        Attendance attendance = attendanceRepository
+        Asistencia attendance = attendanceRepository
                 .findByEmployeeIdAndDate(employee.getId(), today)
                 .orElseGet(() -> newAttendance(employee, today));
 
@@ -118,7 +118,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional(readOnly = true)
     public MarkResponse status(MarkRequest request) {
-        Employee employee = resolveEmployee(request.code());
+        Empleado employee = resolveEmployee(request.code());
         LocalDate today = LocalDate.now(clock);
 
         // Si está en licencia hoy.
@@ -127,12 +127,12 @@ public class AttendanceServiceImpl implements AttendanceService {
         }
 
         // Recuperar el registro de hoy (si existe).
-        Attendance attendance = attendanceRepository
+        Asistencia attendance = attendanceRepository
                 .findByEmployeeIdAndDate(employee.getId(), today).orElse(null);
 
         // Si no existe registro de hoy, el proximo paso es la ENTRADA del trabajo.
         if (attendance == null) {
-            Attendance empty = newAttendance(employee, today);
+            Asistencia empty = newAttendance(employee, today);
             return mapper.toMarkResponse(empty);
         }
 
@@ -142,7 +142,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     /**
      * Aplica la marca correspondiente al próximo paso permitido de la secuencia.
      */
-    private MarkResponse applyNextMark(Attendance a) {
+    private MarkResponse applyNextMark(Asistencia a) {
         LocalTime now = LocalTime.now(clock);
         String step = a.getNextStep();
 
@@ -213,7 +213,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional
     public AttendanceResponse updateAttendance(Long attendanceId, AttendanceUpdateRequest request) {
-        Attendance a = attendanceRepository.findById(attendanceId)
+        Asistencia a = attendanceRepository.findById(attendanceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Asistencia no encontrada con id " + attendanceId));
 
         // Aplicar solo los campos que vienen con valor (los null se ignoran).
@@ -254,10 +254,10 @@ public class AttendanceServiceImpl implements AttendanceService {
     @Override
     @Transactional
     public AttendanceResponse markAbsence(Long employeeId, LocalDate date, boolean absence) {
-        Employee employee = employeeRepository.findById(employeeId)
+        Empleado employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + employeeId));
 
-        Attendance a = attendanceRepository.findByEmployeeIdAndDate(employeeId, date)
+        Asistencia a = attendanceRepository.findByEmployeeIdAndDate(employeeId, date)
                 .orElseGet(() -> newAttendance(employee, date));
         a.setAbsence(absence);
         a.setComplete(true);
@@ -277,17 +277,17 @@ public class AttendanceServiceImpl implements AttendanceService {
 
     /**
      * Busca al empleado por su código de marcaje y comprueba que esté habilitado.
-     * Si el texto ingresado coincide con el formato de un RUT se usa como respaldo
-     * (compatibilidad con registros antiguos), pero la credencial oficial del
-     * trabajador es el código generado por el sistema.
+     *
+     * El código son 4 dígitos, así que se eliminan los espacios que el trabajador
+     * pueda teclear. Si el texto no tiene ese formato se usa como respaldo el RUT
+     * chileno (compatibilidad con registros antiguos), pero la credencial oficial
+     * del trabajador es el código generado por el sistema.
      */
-    private Employee resolveEmployee(String code) {
-        // Los códigos se almacenan en MAYÚSCULAS: se normaliza la entrada para
-        // que la búsqueda ignore mayúsculas/minúsculas (el trabajador puede digitar 1556ivan).
-        String key = code.trim().toUpperCase();
+    private Empleado resolveEmployee(String code) {
+        String key = code.trim();
 
         // 1. Intentar por el código de marcaje.
-        Employee employee = employeeRepository.findByCode(key).orElse(null);
+        Empleado employee = employeeRepository.findByCode(key).orElse(null);
 
         // 2. Respaldo: si no es un código, probar como RUT chileno normalizado.
         if (employee == null) {
@@ -308,8 +308,8 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     /** Crea un registro de asistencia nuevo para el empleado en la fecha indicada. */
-    private Attendance newAttendance(Employee employee, LocalDate date) {
-        Attendance a = new Attendance();
+    private Asistencia newAttendance(Empleado employee, LocalDate date) {
+        Asistencia a = new Asistencia();
         a.setEmployee(employee);
         a.setDate(date);
         a.setNextStep("ENTRADA");
@@ -321,15 +321,15 @@ public class AttendanceServiceImpl implements AttendanceService {
      * trabaja el sábado. Si no tiene un horario definido para esa semana se asume
      * que sí (no se le bloquea el marcaje).
      */
-    private boolean trabajaSabado(Employee employee, LocalDate date) {
-        WeeklySchedule ws = weeklyScheduleRepository
+    private boolean trabajaSabado(Empleado employee, LocalDate date) {
+        HorarioSemanal ws = weeklyScheduleRepository
                 .findByEmployeeAndStartDate(employee, ScheduleUtils.mondayOf(date))
                 .orElse(null);
         return ScheduleUtils.isDayWorked(ws, 6, true);
     }
 
     /** Indica si el empleado tiene una licencia médica activa en la fecha indicada. */
-    private boolean isOnMedicalLicense(Employee employee, LocalDate date) {
+    private boolean isOnMedicalLicense(Empleado employee, LocalDate date) {
         return !licenciaRepository
                 .findByEmployeeIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
                         employee.getId(), date, date)
@@ -337,7 +337,7 @@ public class AttendanceServiceImpl implements AttendanceService {
     }
 
     /** Crea/marca el registro de asistencia de hoy como licencia médica. */
-    private void ensureLicenseAttendance(Employee employee, LocalDate date) {
+    private void ensureLicenseAttendance(Empleado employee, LocalDate date) {
         attendanceRepository.findByEmployeeIdAndDate(employee.getId(), date).ifPresentOrElse(a -> {
             if (!a.isMedicalLicense()) {
                 a.setMedicalLicense(true);
@@ -345,7 +345,7 @@ public class AttendanceServiceImpl implements AttendanceService {
                 attendanceRepository.save(a);
             }
         }, () -> {
-            Attendance a = newAttendance(employee, date);
+            Asistencia a = newAttendance(employee, date);
             a.setMedicalLicense(true);
             a.setComplete(true);
             a.setNextStep("COMPLETE");

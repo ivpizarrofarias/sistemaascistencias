@@ -8,7 +8,7 @@ import cl.ipfsoft.backend.dto.payroll.LicenciaRequest;
 import cl.ipfsoft.backend.dto.payroll.LicenciaResponse;
 import cl.ipfsoft.backend.dto.payroll.LiquidacionDetalleDto;
 import cl.ipfsoft.backend.dto.payroll.LiquidacionResponse;
-import cl.ipfsoft.backend.entity.Advance;
+import cl.ipfsoft.backend.entity.Anticipo;
 import cl.ipfsoft.backend.entity.HoraExtra;
 import cl.ipfsoft.backend.entity.LicenciaMedica;
 import cl.ipfsoft.backend.entity.Liquidacion;
@@ -22,11 +22,11 @@ import java.util.List;
 @Component
 public class PayrollMapper {
 
-    public AdvanceResponse toAdvanceResponse(Advance a) {
+    public AdvanceResponse toAdvanceResponse(Anticipo a) {
         return new AdvanceResponse(a.getId(), a.getEmployee().getId(), a.getDate(), a.getAmount(), a.getDescription());
     }
 
-    public Advance applyAdvanceRequest(Advance a, AdvanceRequest r) {
+    public Anticipo applyAdvanceRequest(Anticipo a, AdvanceRequest r) {
         a.setDate(r.date() != null ? r.date() : java.time.LocalDate.now());
         a.setAmount(r.amount());
         a.setDescription(r.description());
@@ -34,26 +34,26 @@ public class PayrollMapper {
     }
 
     public HoraExtraResponse toHoraExtraResponse(HoraExtra h) {
-        return new HoraExtraResponse(h.getId(), h.getEmployee().getId(), h.getDate(), h.getHoras());
+        return new HoraExtraResponse(h.getId(), h.getEmployee().getId(), h.getDate(), h.getHoras(), h.getMonto());
     }
 
     public HoraExtra applyHoraExtraRequest(HoraExtra h, HoraExtraRequest r) {
         h.setDate(r.date());
         h.setHoras(r.horas());
+        h.setMonto(r.monto());
         return h;
     }
 
     public LicenciaResponse toLicenciaResponse(LicenciaMedica l) {
         int totalDays = (int) ChronoUnit.DAYS.between(l.getStartDate(), l.getEndDate()) + 1;
         return new LicenciaResponse(l.getId(), l.getEmployee().getId(), l.getStartDate(), l.getEndDate(),
-                totalDays, l.getMotivo(), l.isEmployerPays());
+                totalDays, l.getMotivo());
     }
 
     public LicenciaMedica applyLicenciaRequest(LicenciaMedica l, LicenciaRequest r) {
         l.setStartDate(r.startDate());
         l.setEndDate(r.endDate());
         l.setMotivo(r.motivo());
-        l.setEmployerPays(r.employerPays());
         return l;
     }
 
@@ -77,7 +77,6 @@ public class PayrollMapper {
                 l.getGratificacion(),
                 l.getAsignacionFamiliar(),
                 l.getBonoMovilizacion(),
-                l.getSubsidioLicenciaEmpleador(),
                 l.getHorasExtras(),
                 l.getMontoHorasExtras(),
                 l.getOtrosHaberes(),

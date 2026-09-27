@@ -5,7 +5,7 @@ import cl.ipfsoft.backend.dto.permiso.DevolucionRequest;
 import cl.ipfsoft.backend.dto.permiso.PermisoLaboralRequest;
 import cl.ipfsoft.backend.dto.permiso.PermisoLaboralResponse;
 import cl.ipfsoft.backend.dto.permiso.ValidacionRequest;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.entity.FormaCompensacion;
 import cl.ipfsoft.backend.entity.PermisoEstado;
 import cl.ipfsoft.backend.entity.PermisoLaboral;
@@ -75,7 +75,7 @@ public class PermisoLaboralServiceImpl implements PermisoLaboralService {
      */
     private PermisoLaboral buildPermiso(Long employeeId, PermisoLaboralRequest request) {
         // 1. Validar empleado y que esté habilitado.
-        Employee employee = employeeRepository.findById(employeeId)
+        Empleado employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Empleado no encontrado con id " + employeeId));
         if (!employee.isEnabled()) {
             throw new BusinessException("El empleado está deshabilitado y no puede solicitar permisos.");

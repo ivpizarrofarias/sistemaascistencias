@@ -1,15 +1,15 @@
 package cl.ipfsoft.backend.repository;
 
-import cl.ipfsoft.backend.entity.Advance;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Anticipo;
+import cl.ipfsoft.backend.entity.Empleado;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public interface AdvanceRepository extends JpaRepository<Advance, Long> {
+public interface AdvanceRepository extends JpaRepository<Anticipo, Long> {
 
-    List<Advance> findByEmployeeId(Long employeeId);
+    List<Anticipo> findByEmployeeId(Long employeeId);
 
-    List<Advance> findByEmployeeIdAndDateBetweenOrderByDateAsc(Long employeeId, LocalDate start, LocalDate end);
+    List<Anticipo> findByEmployeeIdAndDateBetweenOrderByDateAsc(Long employeeId, LocalDate start, LocalDate end);
 }

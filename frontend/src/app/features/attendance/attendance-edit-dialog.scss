@@ -1,0 +1,33 @@
+.who {
+  margin: 0 0 18px;
+  color: var(--mat-sys-on-surface);
+}
+
+.muted {
+  color: var(--mat-sys-on-surface-variant);
+  font-weight: 400;
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0 14px;
+}
+
+.info-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.83rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.info-box mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}

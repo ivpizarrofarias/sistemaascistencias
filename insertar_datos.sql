@@ -7,7 +7,7 @@
 -- ------------------------------------------------------------------------
 -- 1) EMPLEADOS (si su RUT aún no existe)
 -- ------------------------------------------------------------------------
-INSERT INTO employees
+INSERT INTO empleados
   (afp_fund, base_salary, dependents, email, enabled, first_name,
    health_system, hire_date, last_name, pension_system, phone,
    rol_economico, rut, code)
@@ -22,19 +22,19 @@ ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id);
 
 -- Los IDs de los empleados recién insertados quedan en @emp1, @emp2, @emp3.
 -- (Se resuelven por RUT para que funcione si ya existían.)
-SELECT id INTO @maria FROM employees WHERE rut = '11223344-1';
-SELECT id INTO @carlos FROM employees WHERE rut = '13456789-2';
-SELECT id INTO @ana    FROM employees WHERE rut = '14567890-3';
+SELECT id INTO @maria FROM empleados WHERE rut = '11223344-1';
+SELECT id INTO @carlos FROM empleados WHERE rut = '13456789-2';
+SELECT id INTO @ana    FROM empleados WHERE rut = '14567890-3';
 
 -- ------------------------------------------------------------------------
 -- 2) HORARIOS SEMANALES (semana del 12/10/2026) + DÍAS
 --    Usamos horas representativas L-V 09:00-18:00, Sábado 09:00-13:00 (opcional)
 -- ------------------------------------------------------------------------
 -- María
-INSERT INTO weekly_schedules (label, start_date, employee_id)
+INSERT INTO horarios_semanales (label, start_date, employee_id)
 VALUES ('Semana A', '2026-08-31', @maria);
 SET @sched_maria = LAST_INSERT_ID();
-INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
+INSERT INTO dias_horario_semanal (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
   (1, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_maria),
   (2, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_maria),
   (3, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_maria),
@@ -43,10 +43,10 @@ INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, st
   (6, '13:00:00', '09:00:00', 1, '13:00:00', '09:00:00', @sched_maria);
 
 -- Carlos
-INSERT INTO weekly_schedules (label, start_date, employee_id)
+INSERT INTO horarios_semanales (label, start_date, employee_id)
 VALUES ('Semana A', '2026-08-31', @carlos);
 SET @sched_carlos = LAST_INSERT_ID();
-INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
+INSERT INTO dias_horario_semanal (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
   (1, '18:30:00', '08:30:00', 1, '18:30:00', '08:30:00', @sched_carlos),
   (2, '18:30:00', '08:30:00', 1, '18:30:00', '08:30:00', @sched_carlos),
   (3, '18:30:00', '08:30:00', 1, '18:30:00', '08:30:00', @sched_carlos),
@@ -54,10 +54,10 @@ INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, st
   (5, '18:30:00', '08:30:00', 1, '18:30:00', '08:30:00', @sched_carlos);
 
 -- Ana Lucía
-INSERT INTO weekly_schedules (label, start_date, employee_id)
+INSERT INTO horarios_semanales (label, start_date, employee_id)
 VALUES ('Semana A', '2026-08-31', @ana);
 SET @sched_ana = LAST_INSERT_ID();
-INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
+INSERT INTO dias_horario_semanal (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
   (1, '17:00:00', '09:30:00', 1, '17:00:00', '09:30:00', @sched_ana),
   (2, '17:00:00', '09:30:00', 1, '17:00:00', '09:30:00', @sched_ana),
   (3, '17:00:00', '09:30:00', 1, '17:00:00', '09:30:00', @sched_ana),
@@ -66,30 +66,30 @@ INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, st
   (6, '13:00:00', '09:30:00', 1, '13:00:00', '09:30:00', @sched_ana);
 
 -- Empleados existentes (Test = id 1, Nadia = id 4, Iván = id 5)
-INSERT INTO weekly_schedules (label, start_date, employee_id)
+INSERT INTO horarios_semanales (label, start_date, employee_id)
 VALUES ('Semana A', '2026-08-31', 1);
 SET @sched_1 = LAST_INSERT_ID();
-INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
+INSERT INTO dias_horario_semanal (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
   (1, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_1),
   (2, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_1),
   (3, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_1),
   (4, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_1),
   (5, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_1);
 
-INSERT INTO weekly_schedules (label, start_date, employee_id)
+INSERT INTO horarios_semanales (label, start_date, employee_id)
 VALUES ('Semana A', '2026-08-31', 4);
 SET @sched_4 = LAST_INSERT_ID();
-INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
+INSERT INTO dias_horario_semanal (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
   (1, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_4),
   (2, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_4),
   (3, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_4),
   (4, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_4),
   (5, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_4);
 
-INSERT INTO weekly_schedules (label, start_date, employee_id)
+INSERT INTO horarios_semanales (label, start_date, employee_id)
 VALUES ('Semana A', '2026-08-31', 5);
 SET @sched_5 = LAST_INSERT_ID();
-INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
+INSERT INTO dias_horario_semanal (day_number, end, `start`, worked, end_time, start_time, schedule_id) VALUES
   (1, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_5),
   (2, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_5),
   (3, '18:00:00', '09:00:00', 1, '18:00:00', '09:00:00', @sched_5),
@@ -101,7 +101,7 @@ INSERT INTO weekly_schedule_days (day_number, end, `start`, worked, end_time, st
 -- ------------------------------------------------------------------------
 -- Formato bit: absence, admin_corrected, complete, medical_license
 -- Empleado María (@maria)
-INSERT INTO attendances
+INSERT INTO asistencias
   (absence, admin_corrected, colacion_entrada1, colacion_entrada2, colacion_entrada_count,
    colacion_salida1, colacion_salida2, colacion_salida_count, complete, date,
    entry_time, exit_time, medical_license, next_step, employee_id) VALUES
@@ -112,7 +112,7 @@ INSERT INTO attendances
   (0,0,'14:00:00',NULL,1,'13:00:00',NULL,1,1,'2026-09-04','09:00:00','18:00:00',0,'COMPLETE',@maria);
 
 -- Empleado Carlos (@carlos)
-INSERT INTO attendances
+INSERT INTO asistencias
   (absence, admin_corrected, colacion_entrada1, colacion_entrada2, colacion_entrada_count,
    colacion_salida1, colacion_salida2, colacion_salida_count, complete, date,
    entry_time, exit_time, medical_license, next_step, employee_id) VALUES
@@ -123,7 +123,7 @@ INSERT INTO attendances
   (0,0,'13:30:00',NULL,1,'12:30:00',NULL,1,1,'2026-09-04','08:27:00','18:28:00',0,'COMPLETE',@carlos);
 
 -- Empleada Ana Lucía (@ana)
-INSERT INTO attendances
+INSERT INTO asistencias
   (absence, admin_corrected, colacion_entrada1, colacion_entrada2, colacion_entrada_count,
    colacion_salida1, colacion_salida2, colacion_salida_count, complete, date,
    entry_time, exit_time, medical_license, next_step, employee_id) VALUES
@@ -134,7 +134,7 @@ INSERT INTO attendances
   (0,0,'14:15:00',NULL,1,'13:15:00',NULL,1,0,'2026-09-04','09:31:00',NULL,0,'SALIDA',@ana);
 
 -- Empleados existentes: Test (1)
-INSERT INTO attendances
+INSERT INTO asistencias
   (absence, admin_corrected, colacion_entrada1, colacion_entrada2, colacion_entrada_count,
    colacion_salida1, colacion_salida2, colacion_salida_count, complete, date,
    entry_time, exit_time, medical_license, next_step, employee_id) VALUES
@@ -145,7 +145,7 @@ INSERT INTO attendances
   (0,0,'14:00:00',NULL,1,'13:00:00',NULL,1,1,'2026-09-04','09:04:00','18:02:00',0,'COMPLETE',1);
 
 -- Nadia (4)
-INSERT INTO attendances
+INSERT INTO asistencias
   (absence, admin_corrected, colacion_entrada1, colacion_entrada2, colacion_entrada_count,
    colacion_salida1, colacion_salida2, colacion_salida_count, complete, date,
    entry_time, exit_time, medical_license, next_step, employee_id) VALUES
@@ -156,7 +156,7 @@ INSERT INTO attendances
   (0,0,'14:00:00',NULL,1,'13:00:00',NULL,1,1,'2026-09-04','09:00:00','18:01:00',0,'COMPLETE',4);
 
 -- Iván (5)
-INSERT INTO attendances
+INSERT INTO asistencias
   (absence, admin_corrected, colacion_entrada1, colacion_entrada2, colacion_entrada_count,
    colacion_salida1, colacion_salida2, colacion_salida_count, complete, date,
    entry_time, exit_time, medical_license, next_step, employee_id) VALUES

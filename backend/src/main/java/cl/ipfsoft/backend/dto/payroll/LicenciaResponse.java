@@ -8,7 +8,6 @@ public record LicenciaResponse(
         LocalDate startDate,
         LocalDate endDate,
         int totalDays,
-        String motivo,
-        boolean employerPays
+        String motivo
 ) {
 }

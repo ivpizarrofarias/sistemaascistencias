@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>Registrar anticipo</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <div class="employee">
+      <mat-icon>badge</mat-icon>
+      <div>
+        <div class="name">{{ data.employee.fullName }}</div>
+        <div class="muted">{{ data.employee.rut }}</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <input matInput type="date" formControlName="date" />
+        @if (form.controls.date.hasError('required')) {
+          <mat-error>Requerido</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Monto</mat-label>
+        <input matInput type="number" min="1" step="any" formControlName="amount" />
+        @if (form.controls.amount.invalid) {
+          <mat-error>Indique un monto mayor a 0</mat-error>
+        }
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción</mat-label>
+      <input matInput formControlName="description" placeholder="Opcional" />
+    </mat-form-field>
+
+    <div class="hint">
+      El total de anticipos del período no puede superar el 15% del sueldo base
+      ({{ formatMoney(tope) }}).<br />
+      Ya registrado: {{ formatMoney(data.yaRegistrado) }} · Disponible:
+      {{ formatMoney(disponible) }}.
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cancel()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="submit()">Guardar</button>
+</mat-dialog-actions>

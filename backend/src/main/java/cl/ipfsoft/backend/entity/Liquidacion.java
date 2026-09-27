@@ -37,7 +37,7 @@ public class Liquidacion {
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "employee_id", nullable = false)
-    private Employee employee;
+    private Empleado employee;
 
     @Column(nullable = false)
     private int periodYear;
@@ -70,9 +70,6 @@ public class Liquidacion {
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal asignacionFamiliar = BigDecimal.ZERO;
-
-    @Column(nullable = false, precision = 15, scale = 2)
-    private BigDecimal subsidioLicenciaEmpleador = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal otrosHaberes = BigDecimal.ZERO;

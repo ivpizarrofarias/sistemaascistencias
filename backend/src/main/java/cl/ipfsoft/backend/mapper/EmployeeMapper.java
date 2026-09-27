@@ -2,17 +2,17 @@ package cl.ipfsoft.backend.mapper;
 
 import cl.ipfsoft.backend.dto.employee.EmployeeRequest;
 import cl.ipfsoft.backend.dto.employee.EmployeeResponse;
-import cl.ipfsoft.backend.entity.Employee;
+import cl.ipfsoft.backend.entity.Empleado;
 import cl.ipfsoft.backend.util.RutUtils;
 import org.springframework.stereotype.Component;
 
 /**
- * Conversión entre la entidad Employee y sus DTOs.
+ * Conversión entre la entidad Empleado y sus DTOs.
  */
 @Component
 public class EmployeeMapper {
 
-    public EmployeeResponse toResponse(Employee e) {
+    public EmployeeResponse toResponse(Empleado e) {
         return new EmployeeResponse(
                 e.getId(),
                 RutUtils.format(e.getRut()),
@@ -33,7 +33,7 @@ public class EmployeeMapper {
     }
 
     /** Aplica los campos del request a la entidad (para create y update). */
-    public void applyRequest(Employee e, EmployeeRequest r) {
+    public void applyRequest(Empleado e, EmployeeRequest r) {
         e.setFirstName(r.firstName());
         e.setLastName(r.lastName());
         e.setPhone(r.phone());

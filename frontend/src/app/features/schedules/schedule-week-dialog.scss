@@ -1,0 +1,44 @@
+.week-range {
+  margin: 0 0 16px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.label-field {
+  width: 100%;
+}
+
+.day-table {
+  margin-top: 4px;
+}
+
+.center {
+  text-align: center;
+}
+
+.time-input {
+  width: 120px;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline);
+  border-radius: 8px;
+  transition: border-color 150ms ease;
+}
+
+.time-input:hover:not(:disabled) {
+  border-color: var(--mat-sys-on-surface);
+}
+
+.time-input:focus {
+  outline: none;
+  border-color: var(--mat-sys-primary);
+  border-width: 2px;
+}
+
+.time-input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: var(--mat-sys-surface-container);
+}

@@ -28,11 +28,11 @@ import java.util.List;
  */
 public interface PayrollService {
 
-    /** Calcula y guarda (o recalcula) la liquidación de un empleado para un período. */
+    /**
+     * Calcula y guarda (o recalcula) la liquidación de un empleado para un período.
+     * Las horas extra se obtienen de los registros por fecha del período.
+     */
     LiquidacionResponse createLiquidacion(Long employeeId, int year, int month);
-
-    /** Igual que {@link #createLiquidacion} pero registra las horas extra del período. */
-    LiquidacionResponse createLiquidacion(Long employeeId, int year, int month, java.math.BigDecimal horasExtras);
 
     /** Genera las liquidaciones de todos los empleados de un período y devuelve la cantidad creada. */
     int liquidarTodos(int year, int month);

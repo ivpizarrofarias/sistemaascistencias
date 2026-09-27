@@ -1,0 +1,131 @@
+<div class="page">
+  <app-page-header
+    title="Empleados"
+    [subtitle]="employees().length + ' registrados · ' + totalActivos() + ' habilitados'"
+  >
+    <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+      <mat-icon matPrefix>search</mat-icon>
+      <input
+        matInput
+        placeholder="Buscar por nombre, RUT o código"
+        [value]="search()"
+        (input)="onSearch($any($event.target).value)"
+      />
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo empleado
+    </button>
+  </app-page-header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+      <button mat-button (click)="load()">Reintentar</button>
+    </div>
+  }
+
+  <mat-card appearance="outlined" class="list-card">
+    @if (loading() && employees().length === 0) {
+      <app-loading [spinner]="true" message="Cargando empleados…" />
+    } @else if (employees().length === 0) {
+      <app-empty-state icon="group_off" message="No hay empleados registrados">
+        <button mat-flat-button color="primary" (click)="openCreate()">
+          <mat-icon>person_add</mat-icon>
+          Crear el primero
+        </button>
+      </app-empty-state>
+    } @else if (filtered().length === 0) {
+      <app-empty-state icon="search_off" [message]="'Sin resultados para «' + search() + '»'" />
+    } @else {
+      <div class="table-scroll">
+        <table mat-table [dataSource]="filtered()" class="data-table">
+          <ng-container matColumnDef="rut">
+            <th mat-header-cell *matHeaderCellDef>RUT</th>
+            <td mat-cell *matCellDef="let e" class="num">{{ e.rut }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Nombre</th>
+            <td mat-cell *matCellDef="let e">
+              <div class="emp-cell">
+                <span class="emp-avatar">{{ e.firstName.charAt(0) }}</span>
+                <div>
+                  <div class="emp-name">{{ e.fullName }}</div>
+                  @if (e.email) {
+                    <div class="emp-sub">{{ e.email }}</div>
+                  }
+                </div>
+              </div>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="codigo">
+            <th mat-header-cell *matHeaderCellDef>Código</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="code-chip">{{ e.code }}</span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="sueldo">
+            <th mat-header-cell *matHeaderCellDef class="num-col">Sueldo base</th>
+            <td mat-cell *matCellDef="let e" class="num num-col">{{ formatMoney(e.baseSalary) }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="cargas">
+            <th mat-header-cell *matHeaderCellDef class="num-col">Cargas</th>
+            <td mat-cell *matCellDef="let e" class="num num-col">{{ e.dependents }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let e">
+              <span class="estado-chip" [class.ok]="e.enabled" [class.bad]="!e.enabled">
+                {{ e.enabled ? 'Habilitado' : 'Deshabilitado' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="cell-actions">Acciones</th>
+            <td mat-cell *matCellDef="let e" class="cell-actions">
+              <button
+                mat-icon-button
+                matTooltip="Editar"
+                (click)="openEdit(e)"
+                [disabled]="saving()"
+              >
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                [matTooltip]="e.enabled ? 'Deshabilitar' : 'Habilitar'"
+                (click)="toggleEnabled(e)"
+                [disabled]="saving()"
+              >
+                <mat-icon>{{ e.enabled ? 'person_off' : 'how_to_reg' }}</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                matTooltip="Eliminar"
+                (click)="remove(e)"
+                [disabled]="saving()"
+              >
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        </table>
+      </div>
+    }
+  </mat-card>
+</div>

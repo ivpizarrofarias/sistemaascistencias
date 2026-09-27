@@ -1,0 +1,74 @@
+:host {
+  display: block;
+}
+
+.week-field {
+  min-width: 200px;
+}
+
+.hint-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.hint-card mat-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.hint-card p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.list-card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.emp-name {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.code-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 0.75rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.day-col {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.day-value {
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.day-value.off {
+  background: transparent;
+  color: var(--mat-sys-outline);
+}
+
+@media (max-width: 800px) {
+  .day-col {
+    display: none;
+  }
+}
