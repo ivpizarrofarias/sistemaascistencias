@@ -56,7 +56,10 @@ public class ScheduleMapper {
     public void applyRequest(HorarioSemanal ws, WeeklyScheduleRequest r, Empleado employee) {
         ws.setEmployee(employee);
         ws.setStartDate(r.startDate());
-        ws.setLabel(r.label());
+        // La etiqueta es opcional: una cadena en blanco se guarda como null para
+        // no dejar espacios sueltos en la base ni en la UI.
+        String etiqueta = r.label();
+        ws.setLabel(etiqueta == null || etiqueta.isBlank() ? null : etiqueta.trim());
 
         // Mapa de días existentes (dayNumber -> DiaHorario) para reutilizarlos.
         java.util.Map<Integer, DiaHorario> existentes = new java.util.HashMap<>();

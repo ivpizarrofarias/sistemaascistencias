@@ -4,7 +4,7 @@ import java.util.regex.Pattern;
 
 /**
  * Utilidades para el tratamiento del RUT chileno.
- * Formato aceptado: 12345678-5 o 12345678k (guion opcional, mayúsculas/minúsculas).
+ * Formato aceptado: 12345678-5 o 12345678k (guion y puntos de miles opcionales).
  * La validación usa el módulo 11 (algoritmo oficial del SII).
  */
 public final class RutUtils {
@@ -18,12 +18,19 @@ public final class RutUtils {
 
     /**
      * Valida el formato y el dígito verificador de un RUT.
+     * Admite el RUT con o sin puntos de miles y con o sin guion.
      */
     public static boolean isValid(String rut) {
-        if (rut == null || !RUT_PATTERN.matcher(rut.trim()).matches()) {
+        if (rut == null) {
             return false;
         }
-        String normalized = rut.trim().replace("-", "");
+        // Se quitan los puntos de miles para validar siempre el mismo patrón:
+        // 12.345.678-5, 12345678-9 y 123456789 son el mismo RUT.
+        String limpio = rut.trim().replace(".", "");
+        if (!RUT_PATTERN.matcher(limpio).matches()) {
+            return false;
+        }
+        String normalized = limpio.replace("-", "");
         String body = normalized.substring(0, normalized.length() - 1);
         char dv = Character.toUpperCase(normalized.charAt(normalized.length() - 1));
         return calcularDigitoVerificador(body) == dv;
@@ -37,6 +44,7 @@ public final class RutUtils {
         int multiplicador = 2;
         for (int i = body.length() - 1; i >= 0; i--) {
             suma += (body.charAt(i) - '0') * multiplicador;
+            // Serie oficial del SII: 2,3,4,5,6,7 y al terminar se vuelve a 2.
             multiplicador = (multiplicador == 7) ? 2 : multiplicador + 1;
         }
         int resto = suma % 11;

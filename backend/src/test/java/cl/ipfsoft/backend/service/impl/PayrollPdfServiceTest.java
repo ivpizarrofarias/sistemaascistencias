@@ -61,17 +61,16 @@ class PayrollPdfServiceTest {
         liquidacion.setDiasHabiles(22);
         liquidacion.setSueldoBase(new BigDecimal("980000"));
         liquidacion.setTotalHaberes(new BigDecimal("1141246"));
-        liquidacion.setTotalDescuentos(new BigDecimal("330404"));
-        liquidacion.setLiquidoAPagar(new BigDecimal("810842"));
+        liquidacion.setTotalDescuentos(new BigDecimal("314465"));
+        liquidacion.setLiquidoAPagar(new BigDecimal("826781"));
 
-        // Liquidación real de Javiera Muñoz: 5 haberes y 7 descuentos.
+        // Liquidación real de Javiera Muñoz: 5 haberes y 6 descuentos.
         agregarDetalle("Sueldo base", true, "980000");
         agregarDetalle("Gratificación legal", true, "86864");
         agregarDetalle("Asignación familiar (1 cargas)", true, "4382");
         agregarDetalle("Bono de movilización", true, "30000");
         agregarDetalle("Horas extra (4 h)", true, "40000");
         agregarDetalle("AFP (HABITAT 10%)", false, "110686");
-        agregarDetalle("SIS (seguro invalidez)", false, "15939");
         agregarDetalle("Salud (7%)", false, "77480");
         agregarDetalle("Cesantía (trabajador)", false, "6641");
         agregarDetalle("Impuesto Único 2ª categoría", false, "568");

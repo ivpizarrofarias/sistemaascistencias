@@ -78,8 +78,6 @@ public class DataInitializer implements CommandLineRunner {
                 new BigDecimal("21569.00"));
         put(ParametroSistema.GRATIFICACION_PCT, "Porcentaje de gratificación legal (15% o 4.25 1/M)",
                 new BigDecimal("0.15"));
-        put(ParametroSistema.SIS_PCT, "Seguro de Invalidez y Sobrevivencia (porcentaje)",
-                new BigDecimal("0.0144"));
         put(ParametroSistema.CESANTIA_EMPLEADO_PCT, "Seguro de Cesantía - parte del trabajador (0.6%)",
                 new BigDecimal("0.006"));
         put(ParametroSistema.HORAS_EXTRA_MULT, "Multiplicador de las horas extra sobre el valor hora",

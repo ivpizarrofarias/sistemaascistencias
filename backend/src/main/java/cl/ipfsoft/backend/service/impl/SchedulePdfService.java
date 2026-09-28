@@ -73,23 +73,44 @@ public class SchedulePdfService {
             titulo.setAlignment(Element.ALIGN_CENTER);
             doc.add(titulo);
 
+            doc.add(new Paragraph(" ", normalFont));
+
+            // ---------- Identificación: nombre y semana laboral ----------
+            // Van juntos y destacados: al revisar un PDF impreso hay que ver de
+            // inmediato de quién es el horario y a qué semana corresponde.
             LocalDate inicio = ws.getStartDate();
             LocalDate fin = inicio.plusDays(5);
-            Paragraph semana = new Paragraph("Semana del " + FECHA.format(inicio) + " al " + FECHA.format(fin), boldFont);
+            String nombre = ws.getEmployee().getFullName();
+            String semanaTexto = "Semana laboral del " + FECHA.format(inicio) + " al " + FECHA.format(fin);
+
+            Font nombreFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+            Font semanaFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+
+            Paragraph nombreEmp = new Paragraph(nombre, nombreFont);
+            nombreEmp.setAlignment(Element.ALIGN_CENTER);
+            doc.add(nombreEmp);
+
+            Paragraph semana = new Paragraph(semanaTexto, semanaFont);
             semana.setAlignment(Element.ALIGN_CENTER);
             doc.add(semana);
+
+            // Etiqueta de la semana, si el usuario le puso una.
+            if (ws.getLabel() != null && !ws.getLabel().isBlank()) {
+                Paragraph etiqueta = new Paragraph("Referencia: " + ws.getLabel().trim(), normalFont);
+                etiqueta.setAlignment(Element.ALIGN_CENTER);
+                doc.add(etiqueta);
+            }
 
             doc.add(new Paragraph(" ", normalFont));
 
             // ---------- Datos del trabajador ----------
             PdfPTable datosTrabajador = new PdfPTable(2);
             datosTrabajador.setWidthPercentage(100);
-            celda(datosTrabajador, "Trabajador: " + ws.getEmployee().getFullName(), smallFont, Rectangle.LEFT);
+            celda(datosTrabajador, "Trabajador: " + nombre, smallFont, Rectangle.LEFT);
             celda(datosTrabajador, "RUT: " + RutUtils.format(ws.getEmployee().getRut()), smallFont, Rectangle.LEFT);
             celda(datosTrabajador, "Código: " + ws.getEmployee().getCode(), smallFont, Rectangle.LEFT);
-            celda(datosTrabajador, ws.getLabel() == null || ws.getLabel().isBlank()
-                    ? "Etiqueta: " + FECHA.format(inicio)
-                    : "Etiqueta: " + ws.getLabel(), smallFont, Rectangle.LEFT);
+            celda(datosTrabajador, "Semana laboral: " + FECHA.format(inicio) + " al " + FECHA.format(fin),
+                    smallFont, Rectangle.LEFT);
             doc.add(datosTrabajador);
 
             doc.add(new Paragraph(" ", normalFont));

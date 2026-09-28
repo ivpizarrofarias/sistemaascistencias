@@ -25,6 +25,7 @@ public record LiquidacionResponse(
         BigDecimal baseImponible,
         BigDecimal totalHaberes,
         BigDecimal afp,
+        /** Siempre 0: el SIS ya no se descuenta (lo cubre el 10% de la AFP). */
         BigDecimal sis,
         BigDecimal salud,
         BigDecimal impuestoUnico,

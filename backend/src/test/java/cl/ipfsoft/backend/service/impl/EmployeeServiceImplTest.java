@@ -119,7 +119,18 @@ class EmployeeServiceImplTest {
     @DisplayName("El código se genera distinto para cada empleado nuevo")
     void create_codigosDistintosParaCadaEmpleado() {
         when(employeeRepository.existsByRut(anyString())).thenReturn(false);
-        when(employeeRepository.save(any(Empleado.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        // El repositorio responde como uno real: guarda cada código y lo da por
+        // existente si ya fue usado. Sin esto, dos sorteos aleatorios podrían coincidir
+        // y la prueba sería intermitente.
+        java.util.Set<String> yaGuardados = new java.util.HashSet<>();
+        when(employeeRepository.existsByCode(anyString()))
+                .thenAnswer(inv -> yaGuardados.contains(inv.<String>getArgument(0)));
+        when(employeeRepository.save(any(Empleado.class))).thenAnswer(inv -> {
+            Empleado e = inv.getArgument(0);
+            yaGuardados.add(e.getCode());
+            return e;
+        });
 
         java.util.Set<String> codigos = new java.util.HashSet<>();
         for (int i = 0; i < 50; i++) {

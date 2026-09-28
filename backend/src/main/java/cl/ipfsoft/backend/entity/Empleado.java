@@ -68,8 +68,9 @@ public class Empleado {
     @Column(nullable = false, length = 10)
     private String pensionSystem = "AFP";
 
+    /** Fondo de pensiones. El formulario ofrece los seis fondos de AFPChile. */
     @Column(nullable = false, length = 20)
-    private String afpFund = "APROVISIONA";
+    private String afpFund = "AFP HABITAT";
 
     @Column(nullable = false, length = 20)
     private String healthSystem = "ISAPRE";

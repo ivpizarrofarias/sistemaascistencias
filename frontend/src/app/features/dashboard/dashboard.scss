@@ -52,8 +52,11 @@
   margin-top: 4px;
 }
 
-.chart-wide .chart-box {
-  height: 150px;
+/* El gráfico por empleado lleva su alto calculado según cuántos empleados
+   haya, para que las barras verticales se vean bien proporcionadas. */
+.chart-box-empleados {
+  height: auto;
+  min-height: 220px;
 }
 
 .chart-card mat-card-header {
@@ -102,8 +105,21 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-.num-col {
+/* Columnas numéricas: encabezado y celda se alinean igual, con ancho fijo y
+   cifras de ancho uniforme (tabular-nums) para que "15" cuadre sobre "8". */
+.num-col,
+.num {
+  width: 112px;
+  min-width: 112px;
   text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pct-col,
+.pct-cell {
+  width: 200px;
+  min-width: 200px;
 }
 
 .pct-cell {
@@ -111,12 +127,13 @@
   align-items: center;
   justify-content: flex-end;
   gap: 10px;
-  min-width: 150px;
 }
 
 .pct-bar {
-  flex: 1;
-  max-width: 90px;
+  /* Ancho fijo: si dependiera del contenido, cada fila tendría una barra
+     distinta y los valores no cuadrarían en vertical. */
+  width: 96px;
+  flex-shrink: 0;
   height: 6px;
   border-radius: 3px;
   overflow: hidden;
@@ -138,7 +155,8 @@
 }
 
 .pct-value {
-  min-width: 42px;
+  width: 44px;
+  flex-shrink: 0;
   text-align: right;
   font-weight: 500;
 }
@@ -148,8 +166,11 @@
     max-width: none;
   }
 
-  .chart-box,
-  .chart-wide .chart-box {
+  .chart-box {
     height: 140px;
+  }
+
+  .chart-box-empleados {
+    height: auto;
   }
 }

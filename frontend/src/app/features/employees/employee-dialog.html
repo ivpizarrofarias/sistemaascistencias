@@ -1,95 +1,156 @@
 <h2 mat-dialog-title>{{ isEdit ? 'Editar empleado' : 'Nuevo empleado' }}</h2>
 
 <mat-dialog-content>
-  <form [formGroup]="form" class="emp-form" id="employee-form" (ngSubmit)="submit()">
-    <div class="form-grid">
-      <mat-form-field appearance="outline">
-        <mat-label>RUT</mat-label>
-        <input
-          matInput
-          formControlName="rut"
-          placeholder="12.222.232-K"
-          autocomplete="off"
-          (input)="onRutInput($any($event.target).value)"
-          (blur)="rutTouched.set(true)"
-          required
-        />
-        @if (mostrarErrorRut) {
-          <mat-error>RUT inválido o dígito verificador incorrecto</mat-error>
-        } @else if (rutValido) {
-          <mat-hint class="valid-hint">RUT válido</mat-hint>
+  <form
+    [formGroup]="form"
+    class="emp-form"
+    id="employee-form"
+    (ngSubmit)="submit()"
+    (keydown.enter)="submit()"
+  >
+    @if (intentoFallido() && camposFaltantes.length > 0) {
+      <div class="alert-box">
+        <mat-icon>error_outline</mat-icon>
+        <span>
+          Completa estos datos antes de guardar:
+          <strong>{{ camposFaltantes.join(', ') }}</strong>.
+        </span>
+      </div>
+    }
+
+    <section class="form-section">
+      <h3 class="section-title">Identificación</h3>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>RUT</mat-label>
+          <input
+            matInput
+            formControlName="rut"
+            placeholder="10.561.117-K"
+            autocomplete="off"
+            (input)="onRutInput($any($event.target).value)"
+            (blur)="rutTouched.set(true)"
+            required
+          />
+          @if (mostrarErrorRut) {
+            <mat-error>
+              Ingrese un RUT válido
+              @if (dvEsperado) {
+                · el dígito verificador debería ser <strong>{{ dvEsperado }}</strong>
+              }
+            </mat-error>
+          } @else if (rutVacio && rutTocado) {
+            <mat-error>El RUT es obligatorio</mat-error>
+          } @else if (rutValido) {
+            <mat-hint class="valid-hint">
+              RUT válido{{ rutComoSeGuardara ? ' · se guardará como ' + rutComoSeGuardara : '' }}
+            </mat-hint>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de ingreso</mat-label>
+          <input matInput type="date" formControlName="hireDate" required />
+          <mat-error>La fecha de ingreso es obligatoria</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre</mat-label>
+          <input matInput formControlName="firstName" required />
+          <mat-error>El nombre es obligatorio</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Apellido</mat-label>
+          <input matInput formControlName="lastName" required />
+          <mat-error>El apellido es obligatorio</mat-error>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3 class="section-title">Contacto</h3>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="phone" />
+          <mat-hint>Opcional</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email" />
+          <mat-hint>Opcional</mat-hint>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3 class="section-title">Remuneración</h3>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Sueldo base (CLP)</mat-label>
+          <input
+            matInput
+            formControlName="baseSalary"
+            placeholder="590.000"
+            inputmode="numeric"
+            (input)="onSalaryInput($any($event.target).value)"
+            required
+          />
+          <mat-hint>Con puntos de miles, p. ej. 590.000</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cargas</mat-label>
+          <input matInput type="number" min="0" formControlName="dependents" />
+          <mat-hint>Determina la asignación familiar</mat-hint>
+        </mat-form-field>
+      </div>
+    </section>
+
+    <section class="form-section">
+      <h3 class="section-title">Previsión y salud</h3>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Sistema de pensión</mat-label>
+          <mat-select formControlName="pensionSystem">
+            <mat-option value="AFP">AFP</mat-option>
+            <mat-option value="IPS">IPS / INP</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        @if (pensionSystem === 'AFP') {
+          <mat-form-field appearance="outline">
+            <mat-label>Fondo AFP</mat-label>
+            <mat-select formControlName="afpFund" placeholder="Selecciona el fondo">
+              @for (fondo of fondosAfp; track fondo) {
+                <mat-option [value]="fondo">{{ fondo }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Se usa en el recibo de liquidación</mat-hint>
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="outline">
+            <mat-label>Fondo AFP</mat-label>
+            <input matInput disabled placeholder="No aplica en IPS / INP" />
+            <mat-hint>Aplica solo si el sistema de pensión es AFP</mat-hint>
+          </mat-form-field>
         }
-      </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha de ingreso</mat-label>
-        <input matInput type="date" formControlName="hireDate" required />
-        <mat-error>La fecha de ingreso es obligatoria</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Nombre</mat-label>
-        <input matInput formControlName="firstName" required />
-        <mat-error>El nombre es obligatorio</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Apellido</mat-label>
-        <input matInput formControlName="lastName" required />
-        <mat-error>El apellido es obligatorio</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Teléfono</mat-label>
-        <input matInput formControlName="phone" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Email</mat-label>
-        <input matInput type="email" formControlName="email" />
-        <mat-error>El email no es válido</mat-error>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Sueldo base (CLP)</mat-label>
-        <input
-          matInput
-          formControlName="baseSalary"
-          placeholder="590.000"
-          inputmode="numeric"
-          (input)="onSalaryInput($any($event.target).value)"
-          required
-        />
-        <mat-hint>Con puntos de miles, p. ej. 590.000</mat-hint>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Cargas</mat-label>
-        <input matInput type="number" min="0" formControlName="dependents" />
-        <mat-hint>Determina la asignación familiar</mat-hint>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Sistema de pensión</mat-label>
-        <mat-select formControlName="pensionSystem">
-          <mat-option value="AFP">AFP</mat-option>
-          <mat-option value="IPS">IPS / INP</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Fondo AFP</mat-label>
-        <input matInput formControlName="afpFund" placeholder="Ej: HABITAT, CAPITAL" />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Sistema de salud</mat-label>
-        <mat-select formControlName="healthSystem">
-          <mat-option value="FONASA">FONASA</mat-option>
-          <mat-option value="ISAPRE">ISAPRE</mat-option>
-        </mat-select>
-      </mat-form-field>
-    </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Sistema de salud</mat-label>
+          <mat-select formControlName="healthSystem">
+            <mat-option value="FONASA">FONASA</mat-option>
+            <mat-option value="ISAPRE">ISAPRE</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </section>
 
     @if (isEdit) {
       <div class="code-box">
@@ -116,8 +177,14 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="cancel()">Cancelar</button>
-  <button mat-flat-button color="primary" type="submit" form="employee-form">
+  <button mat-button type="button" (click)="cancel()">Cancelar</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="button"
+    [disabled]="guardado()"
+    (click)="submit()"
+  >
     {{ isEdit ? 'Actualizar' : 'Crear' }}
   </button>
 </mat-dialog-actions>

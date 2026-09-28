@@ -27,7 +27,6 @@ public class ParametroSistema {
     public static final String UTM = "utm";
     public static final String ASIGNACION_FAMILIAR_TRAMO1 = "asignacion_familiar_tramo1";
     public static final String GRATIFICACION_PCT = "gratificacion_pct";
-    public static final String SIS_PCT = "sis_pct";
     public static final String CESANTIA_EMPLEADO_PCT = "cesantia_empleado_pct";
     public static final String HORAS_EXTRA_MULT = "horas_extra_mult";
     public static final String BONO_MOVILIZACION = "bono_movilizacion";

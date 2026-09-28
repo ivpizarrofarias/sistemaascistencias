@@ -230,19 +230,18 @@ public class PayrollServiceImpl implements PayrollService {
         l.setDescuentoLicencia(descuentoLicencia);
 
         // ---------- Descuentos ----------
-        // Base imponible para previsionales (AFP, SIS, salud, cesantía) e impuesto:
+        // Base imponible para previsionales (AFP, salud, cesantía) e impuesto:
         // sólo las remuneraciones IMPONIBLES. La asignación familiar y el bono de
         // movilización NO son imponibles según la legislación chilena, por lo que
         // se excluyen de la base.
         BigDecimal baseImponible = l.getSueldoBase().add(gratificacion)
                 .add(l.getMontoHorasExtras()).add(l.getOtrosHaberes());
 
-        // AFP + SIS (previsional).
+        // AFP (previsional). El SIS ya no se descuenta: el 10% de la AFP Chilean
+        // lo cubre, y descontarlo dos veces bajaba el neto sin base legal.
         BigDecimal afp = baseImponible.multiply(AFP_PCT).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal sisPct = param(ParametroSistema.SIS_PCT, "0.0144");
-        BigDecimal sis = baseImponible.multiply(sisPct).setScale(0, RoundingMode.HALF_UP);
         l.setAfp(afp);
-        l.setSis(sis);
+        l.setSis(BigDecimal.ZERO);
 
         // Salud (7%).
         BigDecimal salud = baseImponible.multiply(SALUD_PCT).setScale(0, RoundingMode.HALF_UP);
@@ -285,7 +284,7 @@ public class PayrollServiceImpl implements PayrollService {
                 .add(l.getBonoMovilizacion())
                 .add(l.getMontoHorasExtras())
                 .add(l.getOtrosHaberes()));
-        l.setTotalDescuentos(afp.add(sis).add(salud).add(impuestoUnico).add(cesantia)
+        l.setTotalDescuentos(afp.add(salud).add(impuestoUnico).add(cesantia)
                 .add(descuentoFaltas).add(descuentoLicencia).add(anticipos).add(descuentoPermisos)
                 .add(l.getDescuentoHorasExtras()));
         l.setLiquidoAPagar(l.getTotalHaberes().subtract(l.getTotalDescuentos()));
@@ -301,7 +300,6 @@ public class PayrollServiceImpl implements PayrollService {
         if (montoHorasExtra.signum() > 0)
             addDetalle(l, "Horas extra (" + horasExtra.stripTrailingZeros().toPlainString() + " h)", true, montoHorasExtra);
         addDetalle(l, "AFP (" + employee.getAfpFund() + " 10%)", false, afp);
-        addDetalle(l, "SIS (seguro invalidez)", false, sis);
         addDetalle(l, "Salud (7%)", false, salud);
         addDetalle(l, "Cesantía (trabajador)", false, cesantia);
         addDetalle(l, "Impuesto Único 2ª categoría", false, impuestoUnico);

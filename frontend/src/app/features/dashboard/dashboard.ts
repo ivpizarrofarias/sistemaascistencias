@@ -158,10 +158,12 @@ export class DashboardPage implements OnInit {
     },
   };
 
-  /** Gráfico 3: porcentaje de asistencia por empleado. */
+  /** Gráfico 3: porcentaje de asistencia por empleado (barras verticales). */
   readonly porEmpleadoData = computed<ChartData<'bar'>>(() => {
     const rows = this.snapshot()?.porEmpleado ?? [];
     return {
+      // Solo el nombre: en vertical el eje X es angosto y el nombre completo
+      // se cortaría. El apellido y el RUT se ven igual en la tabla de detalle.
       labels: rows.map((r) => r.employee.firstName),
       datasets: [
         {
@@ -169,24 +171,28 @@ export class DashboardPage implements OnInit {
           data: rows.map((r) => Number(r.porcentaje.toFixed(1))),
           backgroundColor: rows.map((r) => colorForPercentage(r.porcentaje)),
           borderRadius: 8,
-          maxBarThickness: 46,
+          maxBarThickness: 64,
         },
       ],
     };
   });
 
   readonly porEmpleadoOptions: ChartOptions<'bar'> = {
-    indexAxis: 'y',
+    // Barras verticales: una por empleado, con el porcentaje en el eje Y.
+    indexAxis: 'x',
     responsive: true,
     maintainAspectRatio: false,
     scales: {
-      x: {
+      y: {
         min: 0,
         max: 100,
         title: { display: true, text: '% asistencia' },
         grid: { color: 'rgba(0,0,0,0.06)' },
       },
-      y: { grid: { display: false } },
+      x: {
+        grid: { display: false },
+        ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 },
+      },
     },
     plugins: {
       legend: { display: false },
@@ -197,6 +203,16 @@ export class DashboardPage implements OnInit {
       },
     },
   };
+
+  /**
+   * Alto del gráfico según la cantidad de empleados: en vertical, una barra
+   * por persona necesita una caja más alta para que se lean bien.
+   */
+  readonly altoGraficoEmpleados = computed(() => {
+    const total = this.snapshot()?.porEmpleado?.length ?? 0;
+    if (total === 0) return 220;
+    return Math.min(240 + total * 8, 320);
+  });
 
   /** Fuente de datos de la tabla de detalle por empleado. */
   readonly detailColumns = ['empleado', 'presentes', 'inasistencias', 'licencias', 'porcentaje'];

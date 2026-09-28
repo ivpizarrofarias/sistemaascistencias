@@ -107,8 +107,6 @@ class PayrollServiceImplTest {
     private void mockParams() {
         lenient().when(paramRepository.findById(ParametroSistema.GRATIFICACION_PCT))
                 .thenReturn(Optional.of(new ParametroSistema(ParametroSistema.GRATIFICACION_PCT, "grat", new BigDecimal("0.15"))));
-        lenient().when(paramRepository.findById(ParametroSistema.SIS_PCT))
-                .thenReturn(Optional.of(new ParametroSistema(ParametroSistema.SIS_PCT, "sis", new BigDecimal("0.0144"))));
         lenient().when(paramRepository.findById(ParametroSistema.CESANTIA_EMPLEADO_PCT))
                 .thenReturn(Optional.of(new ParametroSistema(ParametroSistema.CESANTIA_EMPLEADO_PCT, "ces", new BigDecimal("0.006"))));
         lenient().when(paramRepository.findById(ParametroSistema.UTM))
@@ -213,6 +211,43 @@ class PayrollServiceImplTest {
 
         assertEquals(0, new BigDecimal("100000").compareTo(l.anticipos()));
         assertTrue(l.totalDescuentos().compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    /**
+     * El SIS ya no se descuenta: el 10% de la AFP lo cubre y se estaba cobrando
+     * dos veces, bajando el neto sin base legal.
+     */
+    @Test
+    void createLiquidacion_noDescuentaSis() {
+        mockParams();
+        when(employeeRepository.findById(1L)).thenReturn(Optional.of(employee));
+        when(liquidacionRepository.findByEmployeeIdAndPeriodYearAndPeriodMonth(1L, 2026, 8))
+                .thenReturn(Optional.empty());
+        when(advanceRepository.findByEmployeeIdAndDateBetweenOrderByDateAsc(eq(1L), any(), any()))
+                .thenReturn(List.of());
+        when(permisoRepository.findByEmployeeIdAndDateBetweenOrderByDateAsc(eq(1L), any(), any()))
+                .thenReturn(List.of());
+        when(licenciaRepository.findByEmployeeId(1L)).thenReturn(List.of());
+
+        LocalDate d = LocalDate.of(2026, 8, 1);
+        List<Asistencia> atts = new java.util.ArrayList<>();
+        for (int i = 0; i < 22; i++) atts.add(attendance(d.plusDays(i), true, false, false));
+        when(attendanceRepository.findByEmployeeIdAndDateBetweenOrderByDateAsc(1L, d, LocalDate.of(2026, 8, 31)))
+                .thenReturn(atts);
+        when(liquidacionRepository.save(any(cl.ipfsoft.backend.entity.Liquidacion.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        LiquidacionResponse l = service.createLiquidacion(1L, 2026, 8);
+
+        // El campo queda en cero.
+        assertEquals(0, BigDecimal.ZERO.compareTo(l.sis()));
+
+        // Y no aparece ninguna línea de SIS en el detalle.
+        assertTrue(l.detalles().stream().noneMatch(det -> det.concepto().toLowerCase().contains("sis")));
+        assertTrue(l.detalles().stream().noneMatch(det -> det.concepto().toLowerCase().contains("invalidez")));
+
+        // Los totales siguen cuadrando: haberes - descuentos = líquido.
+        assertEquals(0, l.totalHaberes().subtract(l.totalDescuentos()).subtract(l.liquidoAPagar()).intValue());
     }
 
     @Test

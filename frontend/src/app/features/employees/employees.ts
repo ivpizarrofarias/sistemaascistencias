@@ -99,7 +99,7 @@ export class EmployeesPage implements OnInit {
       this.dialog
         .open<EmployeeDialog, { initial: EmployeeResponse | null }, EmployeeRequest>(
           EmployeeDialog,
-          { data: { initial: null }, width: '760px', maxWidth: '95vw', autoFocus: 'first-tabbable' },
+          { data: { initial: null }, width: '820px', maxWidth: '94vw', autoFocus: 'first-tabbable' },
         )
         .afterClosed(),
     );
@@ -115,8 +115,8 @@ export class EmployeesPage implements OnInit {
           EmployeeDialog,
           {
             data: { initial: employee },
-            width: '760px',
-            maxWidth: '95vw',
+            width: '820px',
+            maxWidth: '94vw',
             autoFocus: 'first-tabbable',
           },
         )

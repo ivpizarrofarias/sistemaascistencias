@@ -116,13 +116,16 @@ export interface WeeklySchedule {
   startDate: string
   /** yyyy-MM-dd (sábado) */
   endDate: string
-  label: string
+  /** Opcional: el backend la deja en null si el usuario no escribió nada. */
+  label: string | null
   days: ScheduleDay[]
 }
 
 export interface WeeklyScheduleSave {
   employeeId: number
   startDate: string
+  /** Opcional: si se omite o va en blanco, el backend la guarda como null. */
+  label?: string
   days: ScheduleDay[]
 }
 
@@ -301,6 +304,7 @@ export interface LiquidacionResponse {
   baseImponible: number
   totalHaberes: number
   afp: number
+  /** Siempre 0: el SIS ya no se descuenta porque el 10% de la AFP lo cubre. */
   sis: number
   salud: number
   impuestoUnico: number

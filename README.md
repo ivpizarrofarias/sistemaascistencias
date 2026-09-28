@@ -2,7 +2,7 @@
 
 Sistema completo de gestión de asistencia y liquidaciones de sueldos, con lógica
 de legislación laboral chilena (jornadas con colación, permisos por hora/día,
-compensación, asignación familiar, AFP/SIS/salud/cesantía, impuesto único).
+compensación, asignación familiar, AFP/salud/cesantía, impuesto único).
 
 El proyecto tiene tres partes:
 
@@ -44,7 +44,7 @@ El proyecto tiene tres partes:
 
    Usuario admin por defecto: `admin` / `admin123`.
 
-5. Ejecutar los tests (75 tests de unidad e integración, usan H2):
+5. Ejecutar los tests (85 tests de unidad e integración, usan H2):
    ```bash
    ./mvnw test
    ```

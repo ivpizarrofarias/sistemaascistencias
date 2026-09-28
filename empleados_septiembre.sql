@@ -23,7 +23,7 @@
 -- ======================================================================
 
 -- ======================================================================
--- Javiera Muñoz — RUT 16876543-6 — código de marcaje 4832
+-- Javiera Muñoz — RUT 16876543-6 — código de marcaje 6454
 -- ======================================================================
 
 INSERT INTO empleados
@@ -31,8 +31,8 @@ INSERT INTO empleados
    health_system, hire_date, last_name, pension_system, phone,
    rol_economico, rut, code)
 VALUES
-  ('HABITAT', 980000.00, 1, 'javiera.munoz@empresa.cl', 1, 'Javiera',
-   'FONASA', '2023-05-02', 'Muñoz', 'AFP', '961234567', '9', '16876543-6', '4832');
+  ('AFP HABITAT', 980000.00, 1, 'javiera.munoz@empresa.cl', 1, 'Javiera',
+   'FONASA', '2023-05-02', 'Muñoz', 'AFP', '961234567', '9', '16876543-6', '6454');
 
 SELECT id INTO @emp_jav FROM empleados WHERE rut = '16876543-6';
 
@@ -113,7 +113,7 @@ INSERT INTO licencias_medicas (employee_id, start_date, end_date, motivo, employ
 VALUES (@emp_jav, '2026-09-16', '2026-09-16', 'Gripe', b'1');
 
 -- ======================================================================
--- Sebastián Vargas — RUT 19345678-2 — código de marcaje 7915
+-- Sebastián Vargas — RUT 19345678-2 — código de marcaje 2637
 -- ======================================================================
 
 INSERT INTO empleados
@@ -121,8 +121,8 @@ INSERT INTO empleados
    health_system, hire_date, last_name, pension_system, phone,
    rol_economico, rut, code)
 VALUES
-  ('CAPITAL', 1340000.00, 2, 'sebastian.vargas@empresa.cl', 1, 'Sebastián',
-   'ISAPRE', '2021-02-15', 'Vargas', 'AFP', '965554433', '9', '19345678-2', '7915');
+  ('AFP CUPRUM', 1340000.00, 2, 'sebastian.vargas@empresa.cl', 1, 'Sebastián',
+   'ISAPRE', '2021-02-15', 'Vargas', 'AFP', '965554433', '9', '19345678-2', '2637');
 
 SELECT id INTO @emp_seb FROM empleados WHERE rut = '19345678-2';
 

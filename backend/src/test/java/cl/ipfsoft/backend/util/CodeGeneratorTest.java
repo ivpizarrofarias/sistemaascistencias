@@ -42,23 +42,18 @@ class CodeGeneratorTest {
     }
 
     @Test
-    @DisplayName("El código no depende del RUT ni del nombre")
-    void uniqueCode_noDependeDelRutNiDelNombre() {
-        // Dos empleados con RUT y nombre distintos pueden (deben) recibir códigos distintos.
-        String a = CodeGenerator.uniqueCode(s -> false);
-        String b = CodeGenerator.uniqueCode(s -> false);
-        assertNotEquals(a, b, "Cada empleado debe recibir un código propio");
-    }
-
-    @Test
-    @DisplayName("El código no es predecible a partir del RUT")
-    void uniqueCode_noSeDeduceDelRut() {
-        // Ninguna porción del código debe coincidir con el prefijo del RUT,
-        // porque el código se elige al azar y no se deriva de los datos del empleado.
+    @DisplayName("El código es aleatorio y no se deriva del RUT")
+    void uniqueCode_esAleatorioYNoSeDeduceDelRut() {
+        // El generador no recibe el RUT: no puede derivarse de él. Se comprueba que
+        // los códigos no salen siempre del mismo valor fijo, es decir, que son aleatorios.
+        Set<String> distintos = new HashSet<>();
         for (int i = 0; i < 200; i++) {
-            String codigo = CodeGenerator.uniqueCode(s -> false);
-            assertNotEquals("1687", codigo, "El código no debe ser el prefijo del RUT");
+            distintos.add(CodeGenerator.uniqueCode(s -> false));
         }
+        // Con 200 muestras sobre 9000 combinaciones, que salgan todas iguales es
+        // estadísticamente imposible, así que la aserción es estable.
+        assertTrue(distintos.size() > 1,
+                "El código debe ser aleatorio, pero siempre devolvió el mismo valor");
     }
 
     @Test

@@ -10,7 +10,7 @@
           <mat-option [value]="e.id">{{ e.fullName }} ({{ e.rut }})</mat-option>
         }
       </mat-select>
-      @if (form.controls.employeeId.hasError('required')) {
+      @if (form.controls.employeeId.touched && form.controls.employeeId.value < 1) {
         <mat-error>Seleccione un empleado</mat-error>
       }
     </mat-form-field>
@@ -46,9 +46,10 @@
       <mat-form-field appearance="outline">
         <mat-label>Horas de ausencia</mat-label>
         <input matInput type="number" min="0.01" step="any" formControlName="horas" />
-        <mat-hint>Cantidad de horas que el empleado estará ausente.</mat-hint>
-        @if (form.controls.horas.hasError('min')) {
-          <mat-error>Mínimo 0.01 horas</mat-error>
+        @if (form.controls.horas.touched && horasInvalidas) {
+          <mat-error>Ingrese una cantidad de horas mayor a 0</mat-error>
+        } @else {
+          <mat-hint>Cantidad de horas que el empleado estará ausente.</mat-hint>
         }
       </mat-form-field>
     } @else {
@@ -62,8 +63,8 @@
           formControlName="dias"
           (input)="onDiasChange($any($event.target).value)"
         />
-        @if (form.controls.dias.hasError('min')) {
-          <mat-error>Mínimo 1 día</mat-error>
+        @if (form.controls.dias.touched && diasInvalidos) {
+          <mat-error>Ingrese al menos 1 día</mat-error>
         }
       </mat-form-field>
 

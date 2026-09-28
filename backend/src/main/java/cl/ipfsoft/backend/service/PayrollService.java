@@ -21,7 +21,7 @@ import java.util.List;
  *  - Licencia médica (subsidio parte empleador).
  *  - Asignación familiar por cargas.
  *  - Gratificación legal.
- *  - Descuentos previsionales (AFP + SIS), salud (7%), cesantía.
+ *  - Descuentos previsionales (AFP), salud (7%), cesantía.
  *  - Impuesto Único de 2ª categoría.
  *  - Anticipos de sueldo otorgados en el período.
  *  - Descuento por permisos laborales (o su saldo pendiente de devolución).

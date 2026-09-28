@@ -1,5 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -63,8 +69,11 @@ export class PermisoDialog {
     employeeId: [0, [Validators.required, Validators.min(1)]],
     date: ['', [Validators.required]],
     tipo: ['POR_HORA' as PermisoTipo, [Validators.required]],
-    horas: [0, [Validators.min(0.01)]],
-    dias: [1, [Validators.min(1)]],
+    // El validador mira el tipo elegido: el campo que no aplica se valida solo
+    // si aplica. Con un validador fijo, "Guardar permiso" no cerraba el diálogo
+    // sin avisar, y mat-error no se mostraba porque el control parecía válido.
+    horas: [0, [this.cantidadValidator('POR_HORA')]],
+    dias: [1, [this.cantidadValidator('POR_DIA')]],
     motivo: ['', [Validators.required]],
     formaCompensacion: ['DESCUENTO' as FormaCompensacion, [Validators.required]],
   });
@@ -73,6 +82,8 @@ export class PermisoDialog {
   readonly compensacion = signal<FormaCompensacion>('DESCUENTO');
   readonly date = signal('');
   readonly dias = signal(1);
+
+
 
   /** Fechas concretas que abarca el permiso, para previsualizarlas. */
   readonly fechas = computed(() => {
@@ -86,6 +97,10 @@ export class PermisoDialog {
   onTipoChange(value: PermisoTipo): void {
     this.tipo.set(value);
     this.form.controls.tipo.setValue(value);
+    // Al cambiar de tipo, el campo que recién dejó de aplicar debe dejar de
+    // invalidar el formulario.
+    this.form.controls.horas.updateValueAndValidity();
+    this.form.controls.dias.updateValueAndValidity();
   }
 
   onCompensacionChange(value: FormaCompensacion): void {
@@ -108,6 +123,30 @@ export class PermisoDialog {
     this.ref.close(undefined);
   }
 
+  /**
+   * Valida la cantidad del permiso solo cuando el tipo coincide. Los campos
+   * numéricos llegan como string desde los inputs, y uno vacío queda en `""`:
+   * sin normalizar, el guardado se bloqueaba sin mostrar error.
+   */
+  private cantidadValidator(tipo: PermisoTipo) {
+    return (control: { value: unknown }): ValidationErrors | null => {
+      if (this.form?.controls.tipo.value !== tipo) return null;
+      const n = Number(control.value);
+      if (tipo === 'POR_HORA') {
+        return n > 0 ? null : { horasInvalidas: true };
+      }
+      return n >= 1 ? null : { diasInvalidos: true };
+    };
+  }
+
+  get horasInvalidas(): boolean {
+    return this.form.controls.horas.hasError('horasInvalidas');
+  }
+
+  get diasInvalidos(): boolean {
+    return this.form.controls.dias.hasError('diasInvalidos');
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -122,7 +161,9 @@ export class PermisoDialog {
       date: v.date,
       tipo: v.tipo,
       horas: porHora ? Number(v.horas) : null,
-      dias: porHora ? 0 : Number(v.dias),
+      // El campo que no aplica al tipo elegido va en null, no en 0: el backend
+      // exige mínimo 1 día, y mandar 0 rechazaba el permiso por completo.
+      dias: porHora ? null : Number(v.dias),
       motivo: v.motivo.trim(),
       formaCompensacion: v.formaCompensacion,
     });

@@ -101,6 +101,10 @@ public class Liquidacion {
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal afp = BigDecimal.ZERO;
 
+    /**
+     * Ya no se calcula: el 10% de la AFP incluye el SIS y se estaba cobrando
+     * dos veces. La columna se conserva para no romper los datos históricos.
+     */
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal sis = BigDecimal.ZERO;
 

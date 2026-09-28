@@ -89,6 +89,8 @@ export class ScheduleWeekDialog {
     this.ref.close({
       employeeId: this.data.employee.id,
       startDate: this.data.monday,
+      // La etiqueta es opcional: se manda vacía si el usuario no escribió nada.
+      label: this.label().trim() || undefined,
       days: days.map((d) => ({
         dayNumber: d.dayNumber,
         worked: d.worked,

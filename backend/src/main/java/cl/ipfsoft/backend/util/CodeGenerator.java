@@ -7,7 +7,10 @@ import java.util.function.Predicate;
  * Genera el código de marcaje de los empleados.
  *
  * El empleado no tiene usuario ni contraseña: su credencial es un CÓDIGO de
- * 4 dígitos, único dentro del sistema. Ejemplo: {@code 0483}.
+ * 4 dígitos, único dentro del sistema. Ejemplo: {@code 4832}.
+ *
+ * El código se sortea entre 1000 y 9999, por lo que siempre tiene 4 cifras y
+ * nunca empieza con cero.
  *
  * El código es aleatorio (y no derivado del RUT ni del nombre) por dos motivos:
  *   - no permite adivinar el código de un compañero mirando el suyo, ya que
