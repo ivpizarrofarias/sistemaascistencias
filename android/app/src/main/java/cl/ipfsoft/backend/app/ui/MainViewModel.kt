@@ -114,9 +114,17 @@ class MainViewModel(
 
     private fun mensajeError(e: Exception): String =
         when (e) {
-            is retrofit2.HttpException -> "Error del servidor (${e.code()})"
+            is retrofit2.HttpException -> mensajeDelServidor(e) ?: "Error del servidor (${e.code()})"
             is java.net.UnknownHostException -> "No se pudo conectar al servidor"
             is java.net.ConnectException -> "No se pudo conectar al servidor"
             else -> e.message ?: "Error desconocido"
         }
+
+    /** Extrae el campo "message" del body de error del backend (si viene). */
+    private fun mensajeDelServidor(e: retrofit2.HttpException): String? {
+        val raw = runCatching { e.response()?.errorBody()?.string() }.getOrNull() ?: return null
+        return runCatching {
+            org.json.JSONObject(raw).optString("message").takeIf { it.isNotBlank() }
+        }.getOrNull()
+    }
 }
