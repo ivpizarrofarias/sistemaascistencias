@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
@@ -24,6 +23,7 @@ import {
 } from '../../core/models/api.models';
 import { ApiService } from '../../core/services/api.service';
 import { apiErrorMessage } from '../../core/services/auth.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { formatDate } from '../../core/utils/format';
 import { PageHeader } from '../../shared/page-header';
 import { EmptyState, Loading } from '../../shared/states';
@@ -43,7 +43,6 @@ import { DevolucionDialog, DevolucionData } from './devolucion-dialog';
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatSnackBarModule,
     MatTableModule,
     MatTooltipModule,
     PageHeader,
@@ -56,7 +55,7 @@ import { DevolucionDialog, DevolucionData } from './devolucion-dialog';
 export class PermisosPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notify = inject(NotifyService);
 
   readonly permisos = signal<PermisoLaboralResponse[]>([]);
   readonly employees = signal<EmployeeResponse[]>([]);
@@ -208,12 +207,12 @@ export class PermisosPage implements OnInit {
     this.error.set('');
     try {
       await action();
-      this.snackBar.open(successMessage, 'Cerrar', { duration: 3500 });
+      this.notify.success(successMessage);
       await this.load();
     } catch (err: unknown) {
       const message = apiErrorMessage(err);
       this.error.set(message);
-      this.snackBar.open(message, 'Cerrar', { duration: 6000 });
+      this.notify.error(message);
     } finally {
       this.saving.set(false);
     }

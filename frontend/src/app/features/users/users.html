@@ -1,0 +1,85 @@
+<div class="page">
+  <app-page-header title="Usuarios del sistema" [subtitle]="total() + ' usuarios'">
+    <button mat-flat-button color="primary" (click)="openCreate()">
+      <mat-icon>person_add</mat-icon>
+      Nuevo usuario
+    </button>
+  </app-page-header>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error() }}</span>
+      <button mat-button (click)="load()">Reintentar</button>
+    </div>
+  }
+
+  <mat-card appearance="outlined" class="list-card">
+    @if (loading() && users().length === 0) {
+      <app-loading [spinner]="true" message="Cargando usuarios…" />
+    } @else if (users().length === 0) {
+      <app-empty-state icon="manage_accounts" message="No hay usuarios del sistema">
+        <button mat-flat-button color="primary" (click)="openCreate()">Crear usuario</button>
+      </app-empty-state>
+    } @else {
+      <div class="table-scroll">
+        <table mat-table [dataSource]="users()" class="data-table">
+          <ng-container matColumnDef="usuario">
+            <th mat-header-cell *matHeaderCellDef>Usuario</th>
+            <td mat-cell *matCellDef="let u"><strong>{{ u.username }}</strong></td>
+          </ng-container>
+
+          <ng-container matColumnDef="nombre">
+            <th mat-header-cell *matHeaderCellDef>Nombre completo</th>
+            <td mat-cell *matCellDef="let u">{{ u.fullName || '—' }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="rol">
+            <th mat-header-cell *matHeaderCellDef>Rol</th>
+            <td mat-cell *matCellDef="let u">
+              <span class="role-chip" [class.admin]="u.role === 'ADMIN'" [class.supervisor]="u.role === 'SUPERVISOR'">
+                {{ roleLabel(u.role) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let u">
+              <span class="estado-chip" [class.ok]="u.enabled" [class.bad]="!u.enabled">
+                {{ u.enabled ? 'Habilitado' : 'Deshabilitado' }}
+              </span>
+            </td>
+          </ng-container>
+
+          <ng-container matColumnDef="acciones">
+            <th mat-header-cell *matHeaderCellDef class="cell-actions">Acciones</th>
+            <td mat-cell *matCellDef="let u" class="cell-actions">
+              <button mat-icon-button matTooltip="Editar" (click)="openEdit(u)" [disabled]="saving()">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button
+                mat-icon-button
+                [matTooltip]="u.enabled ? 'Deshabilitar' : 'Habilitar'"
+                (click)="toggleEnabled(u)"
+                [disabled]="saving()"
+              >
+                <mat-icon>{{ u.enabled ? 'person_off' : 'how_to_reg' }}</mat-icon>
+              </button>
+              <button mat-icon-button matTooltip="Eliminar" (click)="remove(u)" [disabled]="saving()">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="columns"></tr>
+          <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        </table>
+      </div>
+    }
+  </mat-card>
+</div>

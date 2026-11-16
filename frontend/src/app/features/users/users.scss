@@ -1,0 +1,11 @@
+.page { padding: 24px; }
+.list-card { margin-top: 16px; }
+.table-scroll { overflow: auto; }
+.data-table { width: 100%; }
+.cell-actions { text-align: right; white-space: nowrap; }
+.alert-error { display:flex; align-items:center; gap:8px; margin: 12px 0; }
+.estado-chip, .role-chip { padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; display: inline-block; }
+.estado-chip.ok { background: #e8f5e9; color: #2e7d32; }
+.estado-chip.bad { background: #ffebee; color: #c62828; }
+.role-chip.admin { background: #e3f2fd; color: #1565c0; }
+.role-chip.supervisor { background: #fff3e0; color: #ef6c00; }

@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
@@ -15,7 +14,8 @@ import { map } from 'rxjs/operators';
 
 import { EmployeeRequest, EmployeeResponse } from '../../core/models/api.models';
 import { ApiService } from '../../core/services/api.service';
-import { apiErrorMessage } from '../../core/services/auth.service';
+import { apiErrorMessage, AuthService } from '../../core/services/auth.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { formatDate, formatMoney, normalizeText } from '../../core/utils/format';
 import { PageHeader } from '../../shared/page-header';
 import { EmptyState, Loading } from '../../shared/states';
@@ -34,7 +34,6 @@ import { EmployeeDialog } from './employee-dialog';
     MatInputModule,
     MatMenuModule,
     MatProgressBarModule,
-    MatSnackBarModule,
     MatTableModule,
     MatTooltipModule,
     PageHeader,
@@ -46,8 +45,9 @@ import { EmployeeDialog } from './employee-dialog';
 })
 export class EmployeesPage implements OnInit {
   private readonly api = inject(ApiService);
+  private readonly auth = inject(AuthService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notify = inject(NotifyService);
 
   readonly employees = signal<EmployeeResponse[]>([]);
   readonly loading = signal(true);
@@ -58,6 +58,7 @@ export class EmployeesPage implements OnInit {
   readonly formatMoney = formatMoney;
   readonly formatDate = formatDate;
 
+  readonly canManageStatus = computed(() => this.auth.role() === 'ADMIN');
   readonly columns = ['rut', 'nombre', 'codigo', 'sueldo', 'cargas', 'estado', 'acciones'];
 
   /** Lista filtrada por texto libre (nombre, RUT, código o email). */
@@ -170,12 +171,12 @@ export class EmployeesPage implements OnInit {
     this.error.set('');
     try {
       await action();
-      this.snackBar.open(successMessage, 'Cerrar', { duration: 3500 });
+      this.notify.success(successMessage);
       await this.load();
     } catch (err: unknown) {
       const message = apiErrorMessage(err);
       this.error.set(message);
-      this.snackBar.open(message, 'Cerrar', { duration: 6000 });
+      this.notify.error(message);
     } finally {
       this.saving.set(false);
     }

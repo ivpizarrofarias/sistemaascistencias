@@ -68,6 +68,31 @@ export class ApiService {
   }
 
   // ==========================================================================
+  // Usuarios del sistema (requieren rol ADMIN)
+  // ==========================================================================
+
+  listUsers(): Observable<import('../models/api.models').SystemUser[]> {
+    return this.http.get<import('../models/api.models').SystemUser[]>(`${API}/users`);
+  }
+
+  createUser(payload: import('../models/api.models').SystemUserRequest): Observable<import('../models/api.models').SystemUser> {
+    return this.http.post<import('../models/api.models').SystemUser>(`${API}/users`, payload);
+  }
+
+  updateUser(id: number, payload: import('../models/api.models').SystemUserRequest): Observable<import('../models/api.models').SystemUser> {
+    return this.http.put<import('../models/api.models').SystemUser>(`${API}/users/${id}`, payload);
+  }
+
+  setUserEnabled(id: number, enabled: boolean): Observable<StatusResponse> {
+    const params = new HttpParams().set('enabled', enabled);
+    return this.http.put<StatusResponse>(`${API}/users/${id}/enabled`, null, { params });
+  }
+
+  deleteUser(id: number): Observable<StatusResponse> {
+    return this.http.delete<StatusResponse>(`${API}/users/${id}`);
+  }
+
+  // ==========================================================================
   // Empleados (requieren rol ADMIN)
   // ==========================================================================
 

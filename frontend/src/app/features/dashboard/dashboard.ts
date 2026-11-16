@@ -162,9 +162,8 @@ export class DashboardPage implements OnInit {
   readonly porEmpleadoData = computed<ChartData<'bar'>>(() => {
     const rows = this.snapshot()?.porEmpleado ?? [];
     return {
-      // Solo el nombre: en vertical el eje X es angosto y el nombre completo
-      // se cortaría. El apellido y el RUT se ven igual en la tabla de detalle.
-      labels: rows.map((r) => r.employee.firstName),
+      // Primer nombre y primer apellido para identificar rápido sin saturar el eje.
+      labels: rows.map((r) => this.shortName(r.employee)),
       datasets: [
         {
           label: '% asistencia',
@@ -176,6 +175,12 @@ export class DashboardPage implements OnInit {
       ],
     };
   });
+
+  shortName(employee: { firstName: string; lastName: string }): string {
+    const first = (employee.firstName ?? '').trim().split(/\s+/)[0] ?? '';
+    const last = (employee.lastName ?? '').trim().split(/\s+/)[0] ?? '';
+    return [first, last].filter(Boolean).join(' ').trim();
+  }
 
   readonly porEmpleadoOptions: ChartOptions<'bar'> = {
     // Barras verticales: una por empleado, con el porcentaje en el eje Y.

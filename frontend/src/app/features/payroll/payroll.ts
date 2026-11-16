@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -26,6 +25,7 @@ import {
 } from '../../core/models/api.models';
 import { ApiService } from '../../core/services/api.service';
 import { apiErrorMessage } from '../../core/services/auth.service';
+import { NotifyService } from '../../core/services/notify.service';
 import { formatDate, formatMoney, monthLabel, normalizeText } from '../../core/utils/format';
 import { PageHeader } from '../../shared/page-header';
 import { ConfirmDialog, ConfirmData } from '../../shared/confirm-dialog';
@@ -47,7 +47,6 @@ import { LiquidacionDetailDialog, LiquidacionDetailData } from './liquidacion-de
     MatInputModule,
     MatProgressBarModule,
     MatSelectModule,
-    MatSnackBarModule,
     MatTableModule,
     MatTabsModule,
     MatTooltipModule,
@@ -61,7 +60,7 @@ import { LiquidacionDetailDialog, LiquidacionDetailData } from './liquidacion-de
 export class PayrollPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly dialog = inject(MatDialog);
-  private readonly snackBar = inject(MatSnackBar);
+  private readonly notify = inject(NotifyService);
 
   readonly employees = signal<EmployeeResponse[]>([]);
   readonly liquidaciones = signal<Record<number, LiquidacionResponse[]>>({});
@@ -270,17 +269,15 @@ export class PayrollPage implements OnInit {
     try {
       const res = await firstValueFrom(this.api.liquidarTodos(this.genYear(), this.genMonth()));
       const count = res.count ?? 0;
-      this.snackBar.open(
+      this.notify.success(
         count === 1 ? 'Se creó 1 liquidación' : `Se crearon ${count} liquidaciones`,
-        'Cerrar',
-        { duration: 4000 },
       );
       this.tab.set(0);
       await this.load();
     } catch (err: unknown) {
       const message = apiErrorMessage(err, 'No se pudieron generar las liquidaciones');
       this.error.set(message);
-      this.snackBar.open(message, 'Cerrar', { duration: 6000 });
+      this.notify.error(message);
     } finally {
       this.saving.set(false);
     }
@@ -299,7 +296,7 @@ export class PayrollPage implements OnInit {
     } catch (err: unknown) {
       const message = apiErrorMessage(err, 'No se pudo generar la liquidación');
       this.error.set(message);
-      this.snackBar.open(message, 'Cerrar', { duration: 6000 });
+      this.notify.error(message);
     } finally {
       this.saving.set(false);
     }
@@ -426,12 +423,12 @@ export class PayrollPage implements OnInit {
     this.error.set('');
     try {
       await action();
-      this.snackBar.open(successMessage, 'Cerrar', { duration: 3500 });
+      this.notify.success(successMessage);
       await this.load();
     } catch (err: unknown) {
       const message = apiErrorMessage(err);
       this.error.set(message);
-      this.snackBar.open(message, 'Cerrar', { duration: 6000 });
+      this.notify.error(message);
     } finally {
       this.saving.set(false);
     }

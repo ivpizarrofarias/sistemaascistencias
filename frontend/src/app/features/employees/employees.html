@@ -103,22 +103,24 @@
               >
                 <mat-icon>edit</mat-icon>
               </button>
-              <button
-                mat-icon-button
-                [matTooltip]="e.enabled ? 'Deshabilitar' : 'Habilitar'"
-                (click)="toggleEnabled(e)"
-                [disabled]="saving()"
-              >
-                <mat-icon>{{ e.enabled ? 'person_off' : 'how_to_reg' }}</mat-icon>
-              </button>
-              <button
-                mat-icon-button
-                matTooltip="Eliminar"
-                (click)="remove(e)"
-                [disabled]="saving()"
-              >
-                <mat-icon>delete</mat-icon>
-              </button>
+              @if (canManageStatus()) {
+                <button
+                  mat-icon-button
+                  [matTooltip]="e.enabled ? 'Deshabilitar' : 'Habilitar'"
+                  (click)="toggleEnabled(e)"
+                  [disabled]="saving()"
+                >
+                  <mat-icon>{{ e.enabled ? 'person_off' : 'how_to_reg' }}</mat-icon>
+                </button>
+                <button
+                  mat-icon-button
+                  matTooltip="Eliminar"
+                  (click)="remove(e)"
+                  [disabled]="saving()"
+                >
+                  <mat-icon>delete</mat-icon>
+                </button>
+              }
             </td>
           </ng-container>
 
