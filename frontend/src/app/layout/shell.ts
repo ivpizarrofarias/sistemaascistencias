@@ -7,6 +7,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -21,6 +22,7 @@ import { map } from 'rxjs/operators';
 
 import { AuthService } from '../core/services/auth.service';
 import { Role } from '../core/models/api.models';
+import { EditProfileDialog } from './edit-profile-dialog';
 
 interface NavItem {
   path: string;
@@ -61,6 +63,7 @@ const NAV_ITEMS: NavItem[] = [
 export class Shell {
   private readonly auth = inject(AuthService);
   private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly dialog = inject(MatDialog);
 
   readonly navItems = NAV_ITEMS;
 
@@ -83,12 +86,20 @@ export class Shell {
   readonly displayName = this.auth.displayName;
   readonly role = this.auth.role;
 
+  /** Foto de perfil del usuario logueado (base64 o null). */
+  readonly fotoPerfil = computed(() => this.auth.user()?.fotoBase64 ?? null);
+
   readonly visibleItems = computed(() => {
     const role = this.role();
     return this.navItems.filter((i) => !i.roles || (role && i.roles.includes(role)));
   });
 
-  readonly roleLabel = computed(() => (this.role() === 'ADMIN' ? 'Administrador' : 'Empleado'));
+  readonly roleLabel = computed(() => {
+    const r = this.role();
+    if (r === 'ADMIN') return 'Administrador';
+    if (r === 'SUPERVISOR') return 'Supervisor';
+    return 'Empleado';
+  });
 
   toggle(): void {
     if (this.isMobile()) {
@@ -110,6 +121,14 @@ export class Shell {
 
   closeOnMobile(): void {
     if (this.isMobile()) this.opened.set(false);
+  }
+
+  /** Abre el diálogo para editar el perfil del usuario logueado. */
+  editProfile(): void {
+    this.dialog.open(EditProfileDialog, {
+      width: '420px',
+      disableClose: true, // No se puede cerrar clickeando afuera ni con Escape
+    });
   }
 
   logout(): void {

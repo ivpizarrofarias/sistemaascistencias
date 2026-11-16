@@ -12,8 +12,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { forkJoin, firstValueFrom, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
-import { map } from 'rxjs/operators';
+import { catchError, defaultIfEmpty, map } from 'rxjs/operators';
 
 import {
   AdvanceRequest,
@@ -137,32 +136,53 @@ export class PayrollPage implements OnInit {
 
       // Cada endpoint por empleado falla de forma independiente; un fallo no
       // debe dejar la página entera sin datos.
-      const { liqs, advs, lics, extras } = await firstValueFrom(
-        forkJoin({
-          liqs: forkJoin(
-            employees.map((e) =>
-              this.api
-                .listLiquidaciones(e.id)
-                .pipe(catchError(() => of([] as LiquidacionResponse[]))),
-            ),
-          ),
-          advs: forkJoin(
-            employees.map((e) =>
-              this.api.listAdvances(e.id).pipe(catchError(() => of([] as AdvanceResponse[]))),
-            ),
-          ),
-          lics: forkJoin(
-            employees.map((e) =>
-              this.api.listLicencias(e.id).pipe(catchError(() => of([] as LicenciaResponse[]))),
-            ),
-          ),
-          extras: forkJoin(
-            employees.map((e) =>
-              this.api.listHorasExtras(e.id).pipe(catchError(() => of([] as HoraExtraResponse[]))),
-            ),
-          ),
-        }),
-      );
+      // Si no hay empleados, evitar forkJoin sobre arreglos vacíos.
+      const { liqs, advs, lics, extras } = employees.length
+        ? await firstValueFrom(
+            forkJoin({
+              liqs: forkJoin(
+                employees.map((e) =>
+                  this.api
+                    .listLiquidaciones(e.id)
+                    .pipe(
+                      catchError(() => of([] as LiquidacionResponse[])),
+                      defaultIfEmpty([] as LiquidacionResponse[]),
+                    ),
+                ),
+              ),
+              advs: forkJoin(
+                employees.map((e) =>
+                  this.api
+                    .listAdvances(e.id)
+                    .pipe(
+                      catchError(() => of([] as AdvanceResponse[])),
+                      defaultIfEmpty([] as AdvanceResponse[]),
+                    ),
+                ),
+              ),
+              lics: forkJoin(
+                employees.map((e) =>
+                  this.api
+                    .listLicencias(e.id)
+                    .pipe(
+                      catchError(() => of([] as LicenciaResponse[])),
+                      defaultIfEmpty([] as LicenciaResponse[]),
+                    ),
+                ),
+              ),
+              extras: forkJoin(
+                employees.map((e) =>
+                  this.api
+                    .listHorasExtras(e.id)
+                    .pipe(
+                      catchError(() => of([] as HoraExtraResponse[])),
+                      defaultIfEmpty([] as HoraExtraResponse[]),
+                    ),
+                ),
+              ),
+            }),
+          )
+        : { liqs: [] as LiquidacionResponse[][], advs: [] as AdvanceResponse[][], lics: [] as LicenciaResponse[][], extras: [] as HoraExtraResponse[][] };
 
       const byEmployee = <T>(list: T[][]): Record<number, T[]> => {
         const map: Record<number, T[]> = {};

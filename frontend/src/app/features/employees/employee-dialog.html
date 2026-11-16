@@ -51,7 +51,9 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Fecha de ingreso</mat-label>
-          <input matInput type="date" formControlName="hireDate" required />
+          <input matInput [matDatepicker]="hirePicker" formControlName="hireDate" required />
+          <mat-datepicker-toggle matIconSuffix [for]="hirePicker"></mat-datepicker-toggle>
+          <mat-datepicker #hirePicker></mat-datepicker>
           <mat-error>La fecha de ingreso es obligatoria</mat-error>
         </mat-form-field>
 

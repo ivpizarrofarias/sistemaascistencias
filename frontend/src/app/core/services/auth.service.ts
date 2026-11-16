@@ -40,6 +40,8 @@ export class AuthService {
     const res = await firstValueFrom(this.api.login(payload));
     this.storage.setToken(res.token);
     this.storage.setUser(res);
+    // Guardar foto como referencia local (opcional).
+    this.storage.setLastFoto(res.fotoBase64 ?? null);
     this._user.set(res);
     return res;
   }
@@ -48,6 +50,37 @@ export class AuthService {
     this.storage.clear();
     this._user.set(null);
     void this.router.navigate(['/login']);
+  }
+
+  /** Actualiza el nombre a mostrar del usuario logueado (guardado en storage). */
+  updateDisplayName(fullName: string): void {
+    const u = this._user();
+    if (!u) return;
+    const next = { ...u, fullName };
+    this.storage.setUser(next);
+    this._user.set(next);
+  }
+
+  /** Actualiza el perfil (usuario, nombre y foto) en la base de datos. */
+  async actualizarPerfil(
+    username: string,
+    fullName: string,
+    fotoBase64: string | null,
+  ): Promise<void> {
+    const res = await firstValueFrom(
+      this.api.actualizarPerfil({ username, fullName, fotoBase64 }),
+    );
+    // El backend devuelve AuthResponse con token actualizado (puede cambiar el username).
+    this.storage.setToken(res.token);
+    this.storage.setUser(res);
+    this.storage.setLastFoto(res.fotoBase64 ?? null);
+    this._user.set(res);
+  }
+
+  /** Obtiene la foto de perfil de un usuario para la pantalla de login. */
+  async obtenerAvatar(username: string): Promise<string | null> {
+    const res = await firstValueFrom(this.api.obtenerAvatar(username));
+    return res.fotoBase64 ?? null;
   }
 }
 

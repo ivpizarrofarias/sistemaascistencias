@@ -3,11 +3,14 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
+  ActualizarPerfilRequest,
   AdvanceRequest,
   AdvanceResponse,
   AttendanceResponse,
   AttendanceUpdateRequest,
   AuthResponse,
+  AvatarResponse,
+  CambiarPasswordRequest,
   DevolucionRequest,
   EmployeeRequest,
   EmployeeResponse,
@@ -46,6 +49,22 @@ export class ApiService {
 
   login(payload: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${API}/auth/login`, payload);
+  }
+
+  /** Cambia la contraseña del usuario autenticado (requiere sesión). */
+  cambiarPassword(payload: CambiarPasswordRequest): Observable<void> {
+    return this.http.post<void>(`${API}/auth/cambiar-password`, payload);
+  }
+
+  /** Actualiza el perfil (usuario, nombre y foto) del usuario autenticado. */
+  actualizarPerfil(payload: ActualizarPerfilRequest): Observable<AuthResponse> {
+    return this.http.put<AuthResponse>(`${API}/auth/perfil`, payload);
+  }
+
+  /** Obtiene la foto de perfil de un usuario (público, para login). */
+  obtenerAvatar(username: string): Observable<AvatarResponse> {
+    const params = new HttpParams().set('username', username);
+    return this.http.get<AvatarResponse>(`${API}/auth/avatar`, { params });
   }
 
   // ==========================================================================

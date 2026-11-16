@@ -11,7 +11,7 @@
 // ============================================================================
 
 /** Rol de usuario en el sistema. */
-export type Role = 'ADMIN' | 'EMPLOYEE'
+export type Role = 'ADMIN' | 'SUPERVISOR' | 'EMPLOYEE'
 
 /** Tipo de permiso laboral. */
 export type PermisoTipo = 'POR_HORA' | 'POR_DIA'
@@ -39,12 +39,34 @@ export interface LoginRequest {
   password: string
 }
 
+/** Petición para cambiar la contraseña del usuario autenticado. */
+export interface CambiarPasswordRequest {
+  passwordActual: string
+  nuevaPassword: string
+}
+
+/** Petición para actualizar el perfil del usuario autenticado. */
+export interface ActualizarPerfilRequest {
+  username: string
+  fullName: string
+  /** Foto de perfil en base64. Null para eliminar la foto. */
+  fotoBase64: string | null
+}
+
+/** Respuesta con la foto de perfil de un usuario (para login). */
+export interface AvatarResponse {
+  username: string
+  fotoBase64: string | null
+}
+
 export interface AuthResponse {
   token: string
   username: string
   role: Role
   employeeId: number | null
   fullName: string | null
+  /** Foto de perfil en base64 (opcional, guardada localmente). */
+  fotoBase64?: string | null
 }
 
 // ============================================================================

@@ -107,9 +107,52 @@
 }
 
 .user-button {
+  white-space: nowrap;
+}
+
+// Asegura que el contenido interno del mat-button (avatar/icono, nombre, caret)
+// se muestre en fila y alineado.
+:host ::ng-deep .user-button .mdc-button__label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.user-name {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  flex-shrink: 0;
+}
+
+.user-avatar img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  object-fit: cover;
+}
+
+.user-icon {
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
 .user-caret {
@@ -146,6 +189,6 @@
 
 @media (max-width: 599px) {
   .user-name {
-    display: none;
+    display: inline-block;
   }
 }

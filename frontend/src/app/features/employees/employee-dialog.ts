@@ -10,6 +10,8 @@ import {
   MatDialogModule,
   MatDialogRef,
 } from '@angular/material/dialog';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -48,6 +50,7 @@ export interface EmployeeFormData {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     MatButtonModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
@@ -55,6 +58,7 @@ export interface EmployeeFormData {
     MatSelectModule,
     ReactiveFormsModule,
   ],
+  providers: [provideNativeDateAdapter()],
   templateUrl: './employee-dialog.html',
   styleUrl: './employee-dialog.scss',
 })
@@ -81,18 +85,18 @@ export class EmployeeDialog {
   /** Marca que ya se intentó guardar, para avisar de los campos faltantes. */
   readonly intentoFallido = signal(false);
 
-  readonly form = this.fb.nonNullable.group({
-    rut: ['', [Validators.required]],
-    hireDate: ['', [Validators.required]],
-    firstName: ['', [Validators.required]],
-    lastName: ['', [Validators.required]],
-    phone: [''],
-    email: ['', [Validators.email]],
-    baseSalary: ['0', [Validators.required]],
-    dependents: [0, [Validators.min(0)]],
-    pensionSystem: ['AFP'],
-    afpFund: [''],
-    healthSystem: ['FONASA'],
+  readonly form = this.fb.group({
+    rut: this.fb.nonNullable.control('', [Validators.required]),
+    hireDate: this.fb.control<Date | null>(null, [Validators.required]),
+    firstName: this.fb.nonNullable.control('', [Validators.required]),
+    lastName: this.fb.nonNullable.control('', [Validators.required]),
+    phone: this.fb.nonNullable.control(''),
+    email: this.fb.nonNullable.control('', [Validators.email]),
+    baseSalary: this.fb.nonNullable.control('0', [Validators.required]),
+    dependents: this.fb.nonNullable.control(0, [Validators.min(0)]),
+    pensionSystem: this.fb.nonNullable.control('AFP'),
+    afpFund: this.fb.nonNullable.control(''),
+    healthSystem: this.fb.nonNullable.control('FONASA'),
   });
 
   constructor() {
@@ -100,7 +104,7 @@ export class EmployeeDialog {
     if (e) {
       this.form.patchValue({
         rut: formatearRut(e.rut),
-        hireDate: e.hireDate,
+        hireDate: e.hireDate ? this.parseIsoDate(e.hireDate) : null,
         firstName: e.firstName,
         lastName: e.lastName,
         phone: e.phone ?? '',
@@ -114,9 +118,22 @@ export class EmployeeDialog {
     }
   }
 
+  private parseIsoDate(value: string): Date {
+    // Evita desfases por zona horaria al construir desde yyyy-MM-dd.
+    const [y, m, d] = value.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+  }
+
+  private formatIsoDate(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   /** El RUT es obligatorio y debe pasar la validación de módulo 11. */
   get rutValue(): string {
-    return this.form.controls.rut.value;
+    return this.form.controls.rut.value ?? '';
   }
 
   get rutValido(): boolean {
@@ -180,9 +197,9 @@ export class EmployeeDialog {
       faltantes.push('un RUT válido (revisa el dígito verificador)');
     }
     if (!c.hireDate.value) faltantes.push('la fecha de ingreso');
-    if (!c.firstName.value.trim()) faltantes.push('el nombre');
-    if (!c.lastName.value.trim()) faltantes.push('el apellido');
-    if (parsearMiles(c.baseSalary.value) <= 0) faltantes.push('el sueldo base');
+    if (!(c.firstName.value ?? '').trim()) faltantes.push('el nombre');
+    if (!(c.lastName.value ?? '').trim()) faltantes.push('el apellido');
+    if (parsearMiles(c.baseSalary.value ?? '0') <= 0) faltantes.push('el sueldo base');
 
     return faltantes;
   }
@@ -214,19 +231,20 @@ export class EmployeeDialog {
 
     this.guardado.set(true);
     const v = this.form.getRawValue();
+    const hireDate = v.hireDate ? this.formatIsoDate(v.hireDate) : '';
     this.ref.close({
-      rut: v.rut,
-      firstName: v.firstName.trim(),
-      lastName: v.lastName.trim(),
-      phone: v.phone.trim() || null,
-      email: v.email.trim() || null,
-      hireDate: v.hireDate,
-      baseSalary: parsearMiles(v.baseSalary),
+      rut: v.rut ?? '',
+      firstName: (v.firstName ?? '').trim(),
+      lastName: (v.lastName ?? '').trim(),
+      phone: (v.phone ?? '').trim() || null,
+      email: (v.email ?? '').trim() || null,
+      hireDate,
+      baseSalary: parsearMiles(v.baseSalary ?? '0'),
       dependents: Number(v.dependents) || 0,
-      pensionSystem: v.pensionSystem,
+      pensionSystem: v.pensionSystem ?? 'AFP',
       // El fondo solo aplica en AFP: mandarlo en IPS ensuciaría el recibo.
-      afpFund: v.pensionSystem === 'AFP' ? v.afpFund || null : null,
-      healthSystem: v.healthSystem,
+      afpFund: (v.pensionSystem ?? 'AFP') === 'AFP' ? (v.afpFund || null) : null,
+      healthSystem: v.healthSystem ?? 'FONASA',
     });
   }
 }
