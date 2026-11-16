@@ -61,26 +61,44 @@ export class ScheduleWeekDialog {
   readonly label = signal(this.data.schedule?.label ?? '');
   readonly dayList = signal<ScheduleDay[]>(buildDays(this.data));
 
+  trackDay = (_: number, d: ScheduleDay) => d.dayNumber;
+
   cancel(): void {
     this.ref.close(undefined);
   }
 
-  toggleWorked(index: number, worked: boolean): void {
-    this.dayList.update((days) =>
-      days.map((d, i) => (i === index ? { ...d, worked } : d)),
-    );
-  }
-
   setTime(index: number, field: 'startTime' | 'endTime', value: string): void {
-    this.dayList.update((days) =>
-      days.map((d, i) => (i === index ? { ...d, [field]: value || null } : d)),
-    );
+    // Mutación in-place para no recrear la fila/input mientras se escribe.
+    const days = this.dayList();
+    const day = days[index];
+    if (!day) return;
+    (day as any)[field] = value || null;
+    this.dayList.set([...days]);
   }
 
-  onTimeInput(index: number, field: 'startTime' | 'endTime', raw: string): void {
-    // `input[type=time]` entrega "HH:mm"; algunos navegadores agregan ":00".
-    const value = raw ? raw.slice(0, 5) : '';
-    this.setTime(index, field, value);
+  toggleWorked(index: number, worked: boolean): void {
+    const days = this.dayList();
+    const day = days[index];
+    if (!day) return;
+    day.worked = worked;
+    this.dayList.set([...days]);
+  }
+
+  onTimeInput(index: number, field: 'startTime' | 'endTime', target: HTMLInputElement): void {
+    const formatted = this.formatTimeInput(target.value);
+    target.value = formatted;
+    this.setTime(index, field, formatted);
+  }
+
+  /** Autoformatea entradas como 0730/1730 -> 07:30/17:30 mientras se escribe. */
+  private formatTimeInput(raw: string): string {
+    const digits = (raw || '').replace(/\D/g, '').slice(0, 4);
+    if (digits.length === 0) return '';
+    if (digits.length <= 2) {
+      return digits;
+    }
+    // Inserta ":" después de los primeros 2 dígitos (HH:mm en progreso/completo).
+    return `${digits.slice(0, 2)}:${digits.slice(2)}`;
   }
 
   submit(): void {

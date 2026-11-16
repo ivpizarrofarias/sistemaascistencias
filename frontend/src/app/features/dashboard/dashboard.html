@@ -138,19 +138,25 @@
           </mat-card-content>
         </mat-card>
 
-        <mat-card appearance="outlined" class="chart-card">
+        <mat-card appearance="outlined" class="chart-card chart-empleados">
           <mat-card-header>
             <mat-card-title>Asistencia por empleado</mat-card-title>
             <mat-card-subtitle>Porcentaje de asistencia en el período</mat-card-subtitle>
           </mat-card-header>
           <mat-card-content>
-            <div class="chart-box chart-box-empleados" [style.height.px]="altoGraficoEmpleados()">
-              <canvas
-                baseChart
-                type="bar"
-                [data]="porEmpleadoData()"
-                [options]="porEmpleadoOptions"
-              ></canvas>
+            <div class="chart-scroll">
+              <div
+                class="chart-box chart-box-empleados"
+                [style.height.px]="altoGraficoEmpleados()"
+                [style.min-width.px]="anchoGraficoEmpleados()"
+              >
+                <canvas
+                  baseChart
+                  type="bar"
+                  [data]="porEmpleadoData()"
+                  [options]="porEmpleadoOptions"
+                ></canvas>
+              </div>
             </div>
           </mat-card-content>
         </mat-card>

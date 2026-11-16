@@ -158,7 +158,7 @@ export class DashboardPage implements OnInit {
     },
   };
 
-  /** Gráfico 3: porcentaje de asistencia por empleado (barras verticales). */
+  /** Gráfico 3: porcentaje de asistencia por empleado (barras horizontales para leer los nombres). */
   readonly porEmpleadoData = computed<ChartData<'bar'>>(() => {
     const rows = this.snapshot()?.porEmpleado ?? [];
     return {
@@ -169,8 +169,8 @@ export class DashboardPage implements OnInit {
           label: '% asistencia',
           data: rows.map((r) => Number(r.porcentaje.toFixed(1))),
           backgroundColor: rows.map((r) => colorForPercentage(r.porcentaje)),
-          borderRadius: 8,
-          maxBarThickness: 64,
+          borderRadius: 6,
+          maxBarThickness: 28,
         },
       ],
     };
@@ -183,7 +183,7 @@ export class DashboardPage implements OnInit {
   }
 
   readonly porEmpleadoOptions: ChartOptions<'bar'> = {
-    // Barras verticales: una por empleado, con el porcentaje en el eje Y.
+    // Barras verticales: los nombres van abajo en el eje X.
     indexAxis: 'x',
     responsive: true,
     maintainAspectRatio: false,
@@ -193,11 +193,21 @@ export class DashboardPage implements OnInit {
         max: 100,
         title: { display: true, text: '% asistencia' },
         grid: { color: 'rgba(0,0,0,0.06)' },
+        ticks: { stepSize: 20 },
       },
       x: {
         grid: { display: false },
-        ticks: { autoSkip: false, maxRotation: 0, minRotation: 0 },
+        ticks: {
+          autoSkip: false,
+          maxRotation: 0,
+          minRotation: 0,
+          font: { size: 10 },
+          padding: 4,
+        },
       },
+    },
+    layout: {
+      padding: { bottom: 8 },
     },
     plugins: {
       legend: { display: false },
@@ -210,13 +220,19 @@ export class DashboardPage implements OnInit {
   };
 
   /**
-   * Alto del gráfico según la cantidad de empleados: en vertical, una barra
-   * por persona necesita una caja más alta para que se lean bien.
+   * Alto para ubicar el gráfico junto a "Reparto del período".
    */
   readonly altoGraficoEmpleados = computed(() => {
     const total = this.snapshot()?.porEmpleado?.length ?? 0;
-    if (total === 0) return 220;
-    return Math.min(240 + total * 8, 320);
+    if (total === 0) return 260;
+    return 260;
+  });
+
+  /** Ancho mínimo con desplazamiento horizontal si hay varios empleados. */
+  readonly anchoGraficoEmpleados = computed(() => {
+    const total = this.snapshot()?.porEmpleado?.length ?? 0;
+    if (total === 0) return 420;
+    return Math.max(420, total * 115);
   });
 
   /** Fuente de datos de la tabla de detalle por empleado. */

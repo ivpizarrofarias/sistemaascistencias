@@ -54,6 +54,11 @@
 
 /* El gráfico por empleado lleva su alto calculado según cuántos empleados
    haya, para que las barras verticales se vean bien proporcionadas. */
+.chart-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .chart-box-empleados {
   height: auto;
   min-height: 220px;
@@ -173,4 +178,20 @@
   .chart-box-empleados {
     height: auto;
   }
+}
+
+.chart-empleados {
+  max-width: none;
+  min-width: 0;
+  grid-column: 2 / -1;
+}
+
+@media (max-width: 900px) {
+  .chart-empleados {
+    grid-column: 1 / -1;
+  }
+}
+
+.chart-empleados .chart-box-empleados {
+  min-height: 180px;
 }
