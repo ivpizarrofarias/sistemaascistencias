@@ -99,7 +99,7 @@ public class PayrollPdfService {
 
             addCell(datosTrabajador, "Trabajador:", l.getEmployee().getFullName(), boldFont, normalFont);
             addCell(datosTrabajador, "RUT:", RutUtils.format(l.getEmployee().getRut()), boldFont, normalFont);
-            addCell(datosTrabajador, "Cargo:", l.getEmployee().getRolEconomico() != null ? l.getEmployee().getRolEconomico() : "-", boldFont, normalFont);
+            addCell(datosTrabajador, "Cargo:", nombreCargo(l.getEmployee().getRolEconomico()), boldFont, normalFont);
             addCell(datosTrabajador, "Fecha Ingreso:", l.getEmployee().getHireDate() != null ? l.getEmployee().getHireDate().toString() : "-", boldFont, normalFont);
 
             addCell(datosTrabajador, "AFP:", l.getEmployee().getAfpFund() != null ? l.getEmployee().getAfpFund() + " (" + l.getEmployee().getPensionSystem() + ")" : "-", boldFont, normalFont);
@@ -294,5 +294,29 @@ public class PayrollPdfService {
             i -= 3;
         }
         return sb.toString();
+    }
+
+    /**
+     * Muestra el nombre del cargo en lugar del código numérico (rol económico).
+     */
+    private String nombreCargo(String rolEconomico) {
+        if (rolEconomico == null || rolEconomico.isBlank()) return "-";
+        String codigo = rolEconomico.trim();
+        return switch (codigo) {
+            case "1" -> "Gerente / Administrador";
+            case "2" -> "Profesional";
+            case "3" -> "Técnico";
+            case "4" -> "Administrativo";
+            case "5" -> "Vendedor";
+            case "6" -> "Operario calificado";
+            case "7" -> "Operario";
+            case "8" -> "Auxiliar";
+            case "9" -> "Trabajador";
+            default -> {
+                // Si ya viene un nombre (no numérico), mostrarlo tal cual.
+                if (!codigo.matches("\\d+")) yield codigo;
+                yield "Cargo " + codigo;
+            }
+        };
     }
 }
