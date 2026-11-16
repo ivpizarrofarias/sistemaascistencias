@@ -103,11 +103,17 @@ export class UserDialog {
       return;
     }
     const v = this.form.getRawValue();
+    const password = (v.password ?? '').trim();
+    if (!this.data.initial && password.length < 4) {
+      this.form.controls.password.setErrors({ required: true });
+      this.form.controls.password.markAsTouched();
+      return;
+    }
     this.ref.close({
       username: v.username.trim(),
-      fullName: v.fullName?.trim() || null,
+      fullName: (v.fullName ?? '').trim() || null,
       role: v.role as 'ADMIN' | 'SUPERVISOR',
-      password: v.password?.trim() || null,
+      password: password || null,
       enabled: v.enabled,
     });
   }
