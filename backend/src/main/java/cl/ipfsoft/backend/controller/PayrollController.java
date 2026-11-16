@@ -55,7 +55,7 @@ public class PayrollController {
      * a mano para evitar duplicarlas.
      */
     @PostMapping("/liquidaciones/employee/{employeeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public LiquidacionResponse createLiquidacion(
             @PathVariable Long employeeId,
             @RequestParam int year,
@@ -65,7 +65,7 @@ public class PayrollController {
 
     /** Genera las liquidaciones de todos los empleados de un período (admin). */
     @PostMapping("/liquidaciones/todos")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public StatusResponse liquidarTodos(@RequestParam int year, @RequestParam int month) {
         int n = payrollService.liquidarTodos(year, month);
         return StatusResponse.ok("Se generaron " + n + " liquidaciones", n);
@@ -124,7 +124,7 @@ public class PayrollController {
 
     /** Marca una liquidación como pagada (admin). */
     @PutMapping("/liquidaciones/{id}/pagar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public StatusResponse marcarPagada(@PathVariable Long id) {
         return payrollService.marcarPagada(id);
     }
@@ -133,7 +133,7 @@ public class PayrollController {
 
     /** Registra un anticipo de sueldo (admin). */
     @PostMapping("/employee/{employeeId}/advances")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public ResponseEntity<AdvanceResponse> addAdvance(@PathVariable Long employeeId,
                                                       @Valid @RequestBody AdvanceRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollService.addAdvance(employeeId, request));
@@ -156,7 +156,7 @@ public class PayrollController {
 
     /** Registra una licencia médica (admin). */
     @PostMapping("/employee/{employeeId}/licencias")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public ResponseEntity<LicenciaResponse> addLicencia(@PathVariable Long employeeId,
                                                         @Valid @RequestBody LicenciaRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollService.addLicencia(employeeId, request));
@@ -179,7 +179,7 @@ public class PayrollController {
 
     /** Registra horas extra de un empleado en una fecha (admin). */
     @PostMapping("/employee/{employeeId}/horasextras")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public ResponseEntity<HoraExtraResponse> addHoraExtra(@PathVariable Long employeeId,
                                                           @Valid @RequestBody HoraExtraRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollService.addHoraExtra(employeeId, request));

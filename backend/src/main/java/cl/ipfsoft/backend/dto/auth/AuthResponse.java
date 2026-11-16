@@ -7,6 +7,7 @@ public record AuthResponse(
         String username,
         Rol role,
         Long employeeId,
-        String fullName
+        String fullName,
+        String fotoBase64
 ) {
 }

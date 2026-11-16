@@ -25,11 +25,11 @@ import java.util.List;
  * Controlador de horarios SEMANALES por empleado.
  *
  * <p>El horario es rotativo y se gestiona en una vista separada (no dentro del
- * formulario del trabajador). Todos los endpoints requieren rol ADMINISTRADOR.</p>
+ * formulario del trabajador). Acceso para ADMIN y SUPERVISOR; eliminar es solo ADMIN.</p>
  */
 @RestController
 @RequestMapping("/api/schedules")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
 public class ScheduleController {
 
     private final ScheduleService scheduleService;
@@ -66,8 +66,9 @@ public class ScheduleController {
         return scheduleService.update(id, request);
     }
 
-    /** Elimina un horario semanal. */
+    /** Elimina un horario semanal (solo ADMIN). */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public StatusResponse delete(@PathVariable Long id) {
         scheduleService.delete(id);
         return StatusResponse.ok("Horario eliminado");

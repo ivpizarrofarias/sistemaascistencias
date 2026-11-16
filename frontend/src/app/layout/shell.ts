@@ -39,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { path: '/asistencias', label: 'Asistencias', icon: 'how_to_reg' },
   { path: '/permisos', label: 'Permisos', icon: 'description' },
   { path: '/remuneraciones', label: 'Remuneraciones', icon: 'payments' },
+  { path: '/usuarios', label: 'Usuarios del sistema', icon: 'manage_accounts', roles: ['ADMIN'] },
 ];
 
 @Component({

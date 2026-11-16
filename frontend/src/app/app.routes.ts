@@ -27,33 +27,39 @@ export const routes: Routes = [
       {
         path: 'empleados',
         title: 'Empleados',
-        canActivate: [authGuard(['ADMIN'])],
+        canActivate: [authGuard(['ADMIN', 'SUPERVISOR'])],
         loadComponent: () => import('./features/employees/employees').then((m) => m.EmployeesPage),
       },
       {
         path: 'horarios',
         title: 'Horarios',
-        canActivate: [authGuard(['ADMIN'])],
+        canActivate: [authGuard(['ADMIN', 'SUPERVISOR'])],
         loadComponent: () => import('./features/schedules/schedules').then((m) => m.SchedulesPage),
       },
       {
         path: 'asistencias',
         title: 'Asistencias',
-        canActivate: [authGuard(['ADMIN'])],
+        canActivate: [authGuard(['ADMIN', 'SUPERVISOR'])],
         loadComponent: () =>
           import('./features/attendance/attendance').then((m) => m.AttendancePage),
       },
       {
         path: 'permisos',
         title: 'Permisos',
-        canActivate: [authGuard(['ADMIN'])],
+        canActivate: [authGuard(['ADMIN', 'SUPERVISOR'])],
         loadComponent: () => import('./features/permisos/permisos').then((m) => m.PermisosPage),
       },
       {
         path: 'remuneraciones',
         title: 'Remuneraciones',
-        canActivate: [authGuard(['ADMIN'])],
+        canActivate: [authGuard(['ADMIN', 'SUPERVISOR'])],
         loadComponent: () => import('./features/payroll/payroll').then((m) => m.PayrollPage),
+      },
+      {
+        path: 'usuarios',
+        title: 'Usuarios del sistema',
+        canActivate: [authGuard(['ADMIN'])],
+        loadComponent: () => import('./features/users/users').then((m) => m.UsersPage),
       },
       {
         path: 'no-autorizado',

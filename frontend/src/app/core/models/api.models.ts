@@ -13,6 +13,26 @@
 /** Rol de usuario en el sistema. */
 export type Role = 'ADMIN' | 'SUPERVISOR' | 'EMPLOYEE'
 
+// ============================================================================
+// USUARIOS DEL SISTEMA
+// ============================================================================
+
+export interface SystemUser {
+  id: number
+  username: string
+  fullName: string | null
+  role: 'ADMIN' | 'SUPERVISOR'
+  enabled: boolean
+}
+
+export interface SystemUserRequest {
+  username: string
+  fullName?: string | null
+  password?: string | null
+  role: 'ADMIN' | 'SUPERVISOR'
+  enabled: boolean
+}
+
 /** Tipo de permiso laboral. */
 export type PermisoTipo = 'POR_HORA' | 'POR_DIA'
 

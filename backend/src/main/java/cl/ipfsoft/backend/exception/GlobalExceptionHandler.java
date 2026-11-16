@@ -85,6 +85,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Errores de negocio simples lanzados como IllegalArgumentException -> 400.
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiError.of(400, ex.getMessage()));
+    }
+
+    /**
      * Cualquier otra excepción no controlada se responde como error 500.
      */
     @ExceptionHandler(Exception.class)

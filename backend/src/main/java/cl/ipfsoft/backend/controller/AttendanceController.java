@@ -77,7 +77,7 @@ public class AttendanceController {
         String username = authentication.getName();
         Usuario user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ForbiddenException("Usuario no encontrado"));
-        if (user.getRole() != Rol.ADMIN) {
+        if (user.getRole() != Rol.ADMIN && user.getRole() != Rol.SUPERVISOR) {
             if (user.getEmployee() == null || !user.getEmployee().getId().equals(employeeId)) {
                 throw new ForbiddenException("No tiene permisos para ver las asistencias de este empleado");
             }
@@ -85,17 +85,17 @@ public class AttendanceController {
         return attendanceService.listByEmployee(employeeId, from, to);
     }
 
-    /** Modifica una asistencia (admin): permite completar/corregir y desbloquear al empleado. */
+    /** Modifica una asistencia: permite completar/corregir y desbloquear al empleado. */
     @PutMapping("/{attendanceId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public AttendanceResponse updateAttendance(@PathVariable Long attendanceId,
                                                @Valid @RequestBody AttendanceUpdateRequest request) {
         return attendanceService.updateAttendance(attendanceId, request);
     }
 
-    /** Marca una ausencia no justificada de un empleado en una fecha (admin). */
+    /** Marca una ausencia no justificada de un empleado en una fecha. */
     @PutMapping("/absence/{employeeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public AttendanceResponse markAbsence(
             @PathVariable Long employeeId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,

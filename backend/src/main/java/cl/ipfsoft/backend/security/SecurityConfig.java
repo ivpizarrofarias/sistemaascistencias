@@ -74,8 +74,9 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 // Definir las reglas de autorización por ruta.
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos (login y marcaje self-service del kiosco).
+                        // Endpoints públicos (login, avatar y marcaje self-service del kiosco).
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/avatar").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/attendance/mark").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/attendance/status").permitAll()
                         // No autenticados pero para ver el estado de salud de la app.

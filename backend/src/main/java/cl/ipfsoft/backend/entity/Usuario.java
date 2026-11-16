@@ -44,4 +44,12 @@ public class Usuario {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    /** Nombre completo para mostrar en la aplicación (opcional). */
+    @Column(name = "full_name", length = 120)
+    private String fullName;
+
+    /** Foto de perfil en base64 (opcional). */
+    @Column(name = "foto_base64", columnDefinition = "LONGTEXT")
+    private String fotoBase64;
 }

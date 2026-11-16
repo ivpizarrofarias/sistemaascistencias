@@ -48,7 +48,7 @@ public class PermisoLaboralController {
 
     /** El administrador crea un permiso a nombre de un empleado, dejándolo APROBADO. */
     @PostMapping("/admin/{employeeId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public ResponseEntity<PermisoLaboralResponse> createAsAdmin(
             @PathVariable Long employeeId,
             @Valid @RequestBody PermisoLaboralRequest request) {
@@ -66,14 +66,14 @@ public class PermisoLaboralController {
 
     /** Lista todos los permisos (admin). */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public List<PermisoLaboralResponse> findAll() {
         return permisoService.findAll();
     }
 
     /** El administrador aprueba o rechaza un permiso. */
     @PutMapping("/{permisoId}/validar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','SUPERVISOR')")
     public PermisoLaboralResponse validate(@PathVariable Long permisoId,
                                            @Valid @RequestBody ValidacionRequest request) {
         return permisoService.validate(permisoId, request);

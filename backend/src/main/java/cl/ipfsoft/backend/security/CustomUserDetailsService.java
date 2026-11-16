@@ -25,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Usuario user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
-        String authority = "ROLE_" + (user.getRole() == Rol.ADMIN ? "ADMIN" : "EMPLOYEE");
+        String authority = "ROLE_" + user.getRole().name();
         return User.withUsername(user.getUsername())
                 .password(user.getPassword())
                 .disabled(!user.isEnabled())
