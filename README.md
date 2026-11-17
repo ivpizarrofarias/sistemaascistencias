@@ -13,6 +13,9 @@ El proyecto tiene tres partes:
 | `android/` | App Android de marcaje (Kotlin + Jetpack Compose)       |
 
 ---
+Usuario del sistema es admin
+Contraseña admin123
+---
 
 ## Capturas del sistema
 
