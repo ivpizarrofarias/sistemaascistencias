@@ -105,7 +105,10 @@ export function apiErrorMessage(err: unknown, fallback = 'Ocurrió un error'): s
       return Object.values(fields).join(' · ');
     }
     if (body?.message) return body.message;
-    return err.statusText || fallback;
+    // Spring puede responder sin reason phrase y el navegador reporta "OK"
+    // como statusText; mostrar eso como error es confuso para el usuario.
+    const statusText = err.statusText?.trim();
+    return statusText && statusText.toLowerCase() !== 'ok' ? statusText : fallback;
   }
 
   if (err instanceof Error && err.message) return err.message;

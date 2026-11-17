@@ -81,11 +81,21 @@ openssl rand -hex 48
 > `docker-compose.yml` ya incluye `host-gateway` para que eso funcione. Desde
 > otro servidor se usa directamente la IP `100.73.41.33`.
 
-Si el frontend se sirve desde otro dominio/origen, ajustar
-`CORS_ALLOWED_ORIGINS` con comas, por ejemplo:
+`CORS_ALLOWED_ORIGINS` debe incluir **la URL pública de la app**, aunque el
+frontend se sirva desde el mismo nginx (Chrome envía la cabecera `Origin` en las
+peticiones POST y Spring la valida; si no está permitida, el login responde 403
+`Invalid CORS request` y la pantalla muestra un error `OK`). Separar varios
+orígenes con comas:
 
 ```dotenv
-CORS_ALLOWED_ORIGINS=https://asistencias.ejemplo.cl
+CORS_ALLOWED_ORIGINS=http://100.73.41.33:8081,http://localhost:*,http://127.0.0.1:*
+```
+
+Después de cambiar `.env`, hay que **recrear** los contenedores; un simple
+`docker compose restart` no vuelve a leer el archivo:
+
+```bash
+docker compose up -d --force-recreate backend
 ```
 
 ## 3. Levantar los servicios
@@ -188,4 +198,6 @@ Guarda el dump en un lugar seguro y no lo subas al repositorio.
 | `Communications link failure` | conectividad al puerto 3306, firewall/security group |
 | la web carga pero los datos no | `docker compose logs frontend`, `docker compose logs backend`, verificar que `/api` llegue a `backend:8080` |
 | 404 al recargar una ruta Angular | confirmar que nginx usa `try_files $uri $uri/ /index.html;` |
+| el login muestra un error `OK` y no entra | el backend responde 403 `Invalid CORS request`; agregar la URL pública a `CORS_ALLOWED_ORIGINS` y recrear el contenedor (`up -d --force-recreate`) |
+| `Bad Gateway` justo tras recrear | el backend aún está arrancando; esperar a `healthy` en `docker compose ps` |
 | el frontend no compila | revisar `frontend/package-lock.json` y logs de `docker compose build frontend` |
