@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f4fbfa"/>
+      <stop offset="100%" stop-color="#e6f4f1"/>
+    </linearGradient>
+    <style>
+      .title{font-size:28px;font-weight:700;fill:#102a2c}
+      .sub{font-size:14px;fill:#3e5c5e}
+      .box{fill:#ffffff;stroke:#0fa3b1;stroke-width:2;rx:14;ry:14}
+      .box2{fill:#ffffff;stroke:#006d77;stroke-width:2;rx:14;ry:14}
+      .db{fill:#fff7ed;stroke:#ff6b35;stroke-width:2}
+      .label{font-size:18px;font-weight:700;fill:#102a2c}
+      .small{font-size:13px;fill:#334155}
+      .arrow{stroke:#334155;stroke-width:2.5;fill:none;marker-end:url(#m)}
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="#334155" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg)"/>
+  <text x="550" y="42" text-anchor="middle" class="title">Arquitectura General - Sistema de Asistencias y Liquidaciones</text>
+  <text x="550" y="68" text-anchor="middle" class="sub">Frontend web + App Android + API REST Spring Boot + MySQL</text>
+
+  <rect x="40" y="120" width="260" height="140" class="box"/>
+  <text x="170" y="155" text-anchor="middle" class="label">Frontend Web</text>
+  <text x="170" y="182" text-anchor="middle" class="small">Angular 21 + Material</text>
+  <text x="170" y="204" text-anchor="middle" class="small">Dashboard, gestión y consultas</text>
+  <text x="170" y="226" text-anchor="middle" class="small">HttpClient + JWT Interceptor</text>
+
+  <rect x="40" y="300" width="260" height="140" class="box"/>
+  <text x="170" y="335" text-anchor="middle" class="label">App Android</text>
+  <text x="170" y="362" text-anchor="middle" class="small">Kotlin + Jetpack Compose</text>
+  <text x="170" y="384" text-anchor="middle" class="small">Marcaje y portal empleado</text>
+  <text x="170" y="406" text-anchor="middle" class="small">Retrofit/OkHttp + DataStore</text>
+
+  <rect x="420" y="170" width="300" height="220" class="box2"/>
+  <text x="570" y="210" text-anchor="middle" class="label">Backend API REST</text>
+  <text x="570" y="238" text-anchor="middle" class="small">Spring Boot 4 / Java 17</text>
+  <text x="570" y="260" text-anchor="middle" class="small">Spring Security + JWT (BCrypt)</text>
+  <text x="570" y="282" text-anchor="middle" class="small">Controladores, Servicios, DTOs</text>
+  <text x="570" y="304" text-anchor="middle" class="small">Validación, Reglas de negocio</text>
+  <text x="570" y="326" text-anchor="middle" class="small">Generación PDF (OpenPDF)</text>
+  <text x="570" y="348" text-anchor="middle" class="small">JPA/Hibernate</text>
+
+  <ellipse cx="930" cy="280" rx="120" ry="70" class="db"/>
+  <text x="930" y="272" text-anchor="middle" class="label">MySQL</text>
+  <text x="930" y="296" text-anchor="middle" class="small">sistema_asis</text>
+  <text x="930" y="316" text-anchor="middle" class="small">Empleados, asistencias,</text>
+  <text x="930" y="334" text-anchor="middle" class="small">horarios, permisos, nómina</text>
+
+  <path d="M300,190 C350,190 360,240 420,250" class="arrow"/>
+  <text x="360" y="205" text-anchor="middle" class="small">HTTPS/HTTP + JSON</text>
+  <text x="360" y="222" text-anchor="middle" class="small">JWT (rutas protegidas)</text>
+
+  <path d="M300,370 C350,370 360,320 420,310" class="arrow"/>
+  <text x="360" y="392" text-anchor="middle" class="small">Marcaje público / API</text>
+  <text x="360" y="409" text-anchor="middle" class="small">Portal empleado autenticado</text>
+
+  <path d="M720,280 C760,280 780,280 810,280" class="arrow"/>
+  <text x="765" y="262" text-anchor="middle" class="small">JPA / SQL</text>
+
+  <rect x="420" y="420" width="300" height="60" class="box"/>
+  <text x="570" y="448" text-anchor="middle" class="small">Endpoints públicos: login, avatar, marcaje/estado</text>
+  <text x="570" y="466" text-anchor="middle" class="small">Endpoints protegidos: gestión y consulta por rol/pertenencia</text>
+</svg>

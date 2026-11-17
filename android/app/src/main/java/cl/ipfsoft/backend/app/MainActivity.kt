@@ -1,6 +1,7 @@
 package cl.ipfsoft.backend.app
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -39,6 +40,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Mantener la pantalla activa mientras la app esté en ejecución.
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         viewModel.restoreSession()
         setContent {
             SistemaAsistenciasTheme {
@@ -51,7 +54,7 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Raíz de la app: decide entre el marcaje (kiosco) y el panel del empleado
+ * Raíz de la app: decide entre el marcaje de asistencia y el panel del empleado
  * según el estado de sesión.
  */
 @Composable

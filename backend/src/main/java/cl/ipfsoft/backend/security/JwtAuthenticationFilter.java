@@ -53,22 +53,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 3. Extraer el token (quitando el prefijo "Bearer ").
         String token = header.substring(7);
 
-        // 4. Extraer el nombre de usuario contenido en el token.
-        String username = jwtService.extractUsername(token);
+        try {
+            // 4. Extraer el nombre de usuario contenido en el token.
+            String username = jwtService.extractUsername(token);
 
-        // 5. Si hay usuario y aún no hay una autenticación activa, validar el token.
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // Cargar el usuario real desde la base de datos.
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            // 5. Si hay usuario y aún no hay una autenticación activa, validar el token.
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // Cargar el usuario real desde la base de datos.
+                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-            // Si el token es válido para ese usuario, construir la autenticación.
-            if (jwtService.isTokenValid(token, userDetails)) {
-                var authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                // Establecer la autenticación en el contexto de seguridad.
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                // Si el token es válido para ese usuario, construir la autenticación.
+                if (jwtService.isTokenValid(token, userDetails)) {
+                    var authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    // Establecer la autenticación en el contexto de seguridad.
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
             }
+        } catch (Exception ex) {
+            // Token inválido, expirado o malformado: no autenticar y continuar.
+            // SecurityConfig decidirá si el endpoint requiere autenticación (401).
+            SecurityContextHolder.clearContext();
         }
 
         // 6. Continuar con el resto de la cadena de filtros.

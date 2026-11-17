@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="360" viewBox="0 0 1100 360" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <style>
+      .title{font-size:28px;font-weight:700;fill:#102a2c}
+      .sub{font-size:14px;fill:#3e5c5e}
+      .step{fill:#ffffff;stroke:#006d77;stroke-width:2;rx:12;ry:12}
+      .api{fill:#f0fdfa;stroke:#0fa3b1;stroke-width:2;rx:12;ry:12}
+      .h{font-size:15px;font-weight:700;fill:#102a2c}
+      .t{font-size:12.5px;fill:#334155}
+      .arrow{stroke:#334155;stroke-width:2.5;fill:none;marker-end:url(#m)}
+    </style>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="#334155" />
+    </marker>
+  </defs>
+  <rect width="100%" height="100%" fill="#f7fbfc"/>
+  <text x="550" y="40" text-anchor="middle" class="title">Flujo de Marcaje de Asistencia</text>
+  <text x="550" y="64" text-anchor="middle" class="sub">Marcaje por código desde la app Android (endpoint público) con registro secuencial del día</text>
+
+  <rect x="30" y="120" width="210" height="120" class="step"/>
+  <text x="135" y="150" text-anchor="middle" class="h">1. Trabajador ingresa código</text>
+  <text x="135" y="176" text-anchor="middle" class="t">Pantalla de marcaje</text>
+  <text x="135" y="196" text-anchor="middle" class="t">Código numérico personal</text>
+  <text x="135" y="216" text-anchor="middle" class="t">App mantiene pantalla activa</text>
+
+  <rect x="300" y="120" width="230" height="120" class="api"/>
+  <text x="415" y="150" text-anchor="middle" class="h">2. API valida y determina paso</text>
+  <text x="415" y="176" text-anchor="middle" class="t">POST /api/attendance/mark</text>
+  <text x="415" y="196" text-anchor="middle" class="t">POST /api/attendance/status</text>
+  <text x="415" y="216" text-anchor="middle" class="t">Secuencia diaria (entrada/colación/salida)</text>
+
+  <rect x="590" y="120" width="220" height="120" class="step"/>
+  <text x="700" y="150" text-anchor="middle" class="h">3. Registro en asistencia</text>
+  <text x="700" y="176" text-anchor="middle" class="t">Se guarda hora del paso actual</text>
+  <text x="700" y="196" text-anchor="middle" class="t">Estado: en curso / completo</text>
+  <text x="700" y="216" text-anchor="middle" class="t">Control de bloqueos/consistencia</text>
+
+  <rect x="870" y="120" width="200" height="120" class="step"/>
+  <text x="970" y="150" text-anchor="middle" class="h">4. Respuesta al usuario</text>
+  <text x="970" y="176" text-anchor="middle" class="t">Siguiente paso o jornada completa</text>
+  <text x="970" y="196" text-anchor="middle" class="t">Resumen de marcas del día</text>
+  <text x="970" y="216" text-anchor="middle" class="t">Mensajes de error/validación</text>
+
+  <path d="M240,180 L300,180" class="arrow"/>
+  <path d="M530,180 L590,180" class="arrow"/>
+  <path d="M810,180 L870,180" class="arrow"/>
+
+  <rect x="250" y="270" width="600" height="56" class="step"/>
+  <text x="550" y="295" text-anchor="middle" class="t">Las correcciones administrativas (edición, ausencias, licencias) se realizan por usuarios autorizados en los módulos protegidos del sistema.</text>
+  <text x="550" y="314" text-anchor="middle" class="t">El marcaje público no requiere sesión, pero debe protegerse en producción (p.ej. rate limiting y endurecimiento de red).</text>
+</svg>

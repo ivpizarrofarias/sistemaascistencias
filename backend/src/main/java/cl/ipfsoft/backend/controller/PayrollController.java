@@ -8,12 +8,18 @@ import cl.ipfsoft.backend.dto.payroll.HoraExtraResponse;
 import cl.ipfsoft.backend.dto.payroll.LicenciaRequest;
 import cl.ipfsoft.backend.dto.payroll.LicenciaResponse;
 import cl.ipfsoft.backend.dto.payroll.LiquidacionResponse;
+import cl.ipfsoft.backend.entity.Rol;
+import cl.ipfsoft.backend.entity.Usuario;
+import cl.ipfsoft.backend.exception.ForbiddenException;
+import cl.ipfsoft.backend.repository.AppUserRepository;
+import cl.ipfsoft.backend.repository.LiquidacionRepository;
 import cl.ipfsoft.backend.service.PayrollService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,9 +48,39 @@ import java.util.Locale;
 public class PayrollController {
 
     private final PayrollService payrollService;
+    private final AppUserRepository userRepository;
+    private final LiquidacionRepository liquidacionRepository;
 
-    public PayrollController(PayrollService payrollService) {
+    public PayrollController(PayrollService payrollService,
+                             AppUserRepository userRepository,
+                             LiquidacionRepository liquidacionRepository) {
         this.payrollService = payrollService;
+        this.userRepository = userRepository;
+        this.liquidacionRepository = liquidacionRepository;
+    }
+
+    private Usuario usuarioActual(Authentication authentication) {
+        return userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new ForbiddenException("Usuario no encontrado"));
+    }
+
+    private void validarAccesoEmpleado(Long employeeId, Authentication authentication) {
+        Usuario user = usuarioActual(authentication);
+        if (user.getRole() == Rol.ADMIN || user.getRole() == Rol.SUPERVISOR) return;
+        if (user.getEmployee() == null || !user.getEmployee().getId().equals(employeeId)) {
+            throw new ForbiddenException("No tiene permisos para acceder a la información de este empleado");
+        }
+    }
+
+    private void validarAccesoLiquidacion(Long liquidacionId, Authentication authentication) {
+        Usuario user = usuarioActual(authentication);
+        if (user.getRole() == Rol.ADMIN || user.getRole() == Rol.SUPERVISOR) return;
+        Long ownerId = liquidacionRepository.findById(liquidacionId)
+                .map(l -> l.getEmployee().getId())
+                .orElseThrow(() -> new cl.ipfsoft.backend.exception.ResourceNotFoundException("Liquidación no encontrada con id " + liquidacionId));
+        if (user.getEmployee() == null || !user.getEmployee().getId().equals(ownerId)) {
+            throw new ForbiddenException("No tiene permisos para acceder a esta liquidación");
+        }
     }
 
     // ---- Liquidaciones ----
@@ -71,21 +107,24 @@ public class PayrollController {
         return StatusResponse.ok("Se generaron " + n + " liquidaciones", n);
     }
 
-    /** Lista las liquidaciones de un empleado (empleado o admin). */
+    /** Lista las liquidaciones de un empleado (propias o admin/supervisor). */
     @GetMapping("/liquidaciones/employee/{employeeId}")
-    public List<LiquidacionResponse> listLiquidaciones(@PathVariable Long employeeId) {
+    public List<LiquidacionResponse> listLiquidaciones(@PathVariable Long employeeId, Authentication authentication) {
+        validarAccesoEmpleado(employeeId, authentication);
         return payrollService.listLiquidaciones(employeeId);
     }
 
-    /** Obtiene una liquidación por id (empleado o admin). */
+    /** Obtiene una liquidación por id (propia o admin/supervisor). */
     @GetMapping("/liquidaciones/{id}")
-    public LiquidacionResponse getLiquidacion(@PathVariable Long id) {
+    public LiquidacionResponse getLiquidacion(@PathVariable Long id, Authentication authentication) {
+        validarAccesoLiquidacion(id, authentication);
         return payrollService.getLiquidacion(id);
     }
 
-    /** Descarga el PDF de una liquidación por id (empleado o admin). */
+    /** Descarga el PDF de una liquidación por id (propia o admin/supervisor). */
     @GetMapping("/liquidaciones/{id}/pdf")
-    public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id) {
+    public ResponseEntity<byte[]> descargarPdf(@PathVariable Long id, Authentication authentication) {
+        validarAccesoLiquidacion(id, authentication);
         LiquidacionResponse l = payrollService.getLiquidacion(id);
         byte[] pdf = payrollService.generateLiquidacionPdf(id);
         String archivo = nombreArchivoLiquidacion(l);
@@ -139,9 +178,10 @@ public class PayrollController {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollService.addAdvance(employeeId, request));
     }
 
-    /** Lista los anticipos de un empleado. */
+    /** Lista los anticipos de un empleado (propios o admin/supervisor). */
     @GetMapping("/employee/{employeeId}/advances")
-    public List<AdvanceResponse> listAdvances(@PathVariable Long employeeId) {
+    public List<AdvanceResponse> listAdvances(@PathVariable Long employeeId, Authentication authentication) {
+        validarAccesoEmpleado(employeeId, authentication);
         return payrollService.listAdvances(employeeId);
     }
 
@@ -162,9 +202,10 @@ public class PayrollController {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollService.addLicencia(employeeId, request));
     }
 
-    /** Lista las licencias de un empleado. */
+    /** Lista las licencias de un empleado (propias o admin/supervisor). */
     @GetMapping("/employee/{employeeId}/licencias")
-    public List<LicenciaResponse> listLicencias(@PathVariable Long employeeId) {
+    public List<LicenciaResponse> listLicencias(@PathVariable Long employeeId, Authentication authentication) {
+        validarAccesoEmpleado(employeeId, authentication);
         return payrollService.listLicencias(employeeId);
     }
 
@@ -185,9 +226,10 @@ public class PayrollController {
         return ResponseEntity.status(HttpStatus.CREATED).body(payrollService.addHoraExtra(employeeId, request));
     }
 
-    /** Lista las horas extra registradas de un empleado. */
+    /** Lista las horas extra registradas de un empleado (propias o admin/supervisor). */
     @GetMapping("/employee/{employeeId}/horasextras")
-    public List<HoraExtraResponse> listHorasExtras(@PathVariable Long employeeId) {
+    public List<HoraExtraResponse> listHorasExtras(@PathVariable Long employeeId, Authentication authentication) {
+        validarAccesoEmpleado(employeeId, authentication);
         return payrollService.listHorasExtras(employeeId);
     }
 

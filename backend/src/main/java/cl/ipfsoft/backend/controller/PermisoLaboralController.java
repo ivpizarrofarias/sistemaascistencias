@@ -5,12 +5,18 @@ import cl.ipfsoft.backend.dto.permiso.DevolucionRequest;
 import cl.ipfsoft.backend.dto.permiso.PermisoLaboralRequest;
 import cl.ipfsoft.backend.dto.permiso.PermisoLaboralResponse;
 import cl.ipfsoft.backend.dto.permiso.ValidacionRequest;
+import cl.ipfsoft.backend.entity.Rol;
+import cl.ipfsoft.backend.entity.Usuario;
+import cl.ipfsoft.backend.exception.ForbiddenException;
+import cl.ipfsoft.backend.repository.AppUserRepository;
+import cl.ipfsoft.backend.repository.PermisoLaboralRepository;
 import cl.ipfsoft.backend.service.PermisoLaboralService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,15 +40,47 @@ import java.util.List;
 public class PermisoLaboralController {
 
     private final PermisoLaboralService permisoService;
+    private final AppUserRepository userRepository;
+    private final PermisoLaboralRepository permisoRepository;
 
-    public PermisoLaboralController(PermisoLaboralService permisoService) {
+    public PermisoLaboralController(PermisoLaboralService permisoService,
+                                    AppUserRepository userRepository,
+                                    PermisoLaboralRepository permisoRepository) {
         this.permisoService = permisoService;
+        this.userRepository = userRepository;
+        this.permisoRepository = permisoRepository;
     }
 
-    /** El trabajador solicita un permiso laboral. */
+    private Usuario usuarioActual(Authentication authentication) {
+        return userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new ForbiddenException("Usuario no encontrado"));
+    }
+
+    private void validarAccesoEmpleado(Long employeeId, Authentication authentication) {
+        Usuario user = usuarioActual(authentication);
+        if (user.getRole() == Rol.ADMIN || user.getRole() == Rol.SUPERVISOR) return;
+        if (user.getEmployee() == null || !user.getEmployee().getId().equals(employeeId)) {
+            throw new ForbiddenException("No tiene permisos para acceder a la información de este empleado");
+        }
+    }
+
+    private void validarAccesoPermiso(Long permisoId, Authentication authentication) {
+        Usuario user = usuarioActual(authentication);
+        if (user.getRole() == Rol.ADMIN || user.getRole() == Rol.SUPERVISOR) return;
+        Long ownerId = permisoRepository.findById(permisoId)
+                .map(p -> p.getEmployee().getId())
+                .orElseThrow(() -> new cl.ipfsoft.backend.exception.ResourceNotFoundException("Permiso no encontrado con id " + permisoId));
+        if (user.getEmployee() == null || !user.getEmployee().getId().equals(ownerId)) {
+            throw new ForbiddenException("No tiene permisos para acceder a este permiso");
+        }
+    }
+
+    /** El trabajador solicita un permiso laboral (solo propio, o admin/supervisor). */
     @PostMapping("/employee/{employeeId}")
     public ResponseEntity<PermisoLaboralResponse> request(@PathVariable Long employeeId,
-                                                          @Valid @RequestBody PermisoLaboralRequest request) {
+                                                          @Valid @RequestBody PermisoLaboralRequest request,
+                                                          Authentication authentication) {
+        validarAccesoEmpleado(employeeId, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(permisoService.request(employeeId, request));
     }
 
@@ -55,12 +93,14 @@ public class PermisoLaboralController {
         return ResponseEntity.status(HttpStatus.CREATED).body(permisoService.createAsAdmin(employeeId, request));
     }
 
-    /** Lista permisos de un empleado en un rango de fechas. */
+    /** Lista permisos de un empleado en un rango de fechas (propios o admin/supervisor). */
     @GetMapping("/employee/{employeeId}")
     public List<PermisoLaboralResponse> listByEmployee(
             @PathVariable Long employeeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            Authentication authentication) {
+        validarAccesoEmpleado(employeeId, authentication);
         return permisoService.listByEmployee(employeeId, from, to);
     }
 
@@ -79,10 +119,12 @@ public class PermisoLaboralController {
         return permisoService.validate(permisoId, request);
     }
 
-    /** El trabajador devuelve (compensa) horas o días del permiso. */
+    /** El trabajador devuelve (compensa) horas o días del permiso (solo propio, o admin/supervisor). */
     @PutMapping("/{permisoId}/devolver")
     public PermisoLaboralResponse registerDevolucion(@PathVariable Long permisoId,
-                                                     @Valid @RequestBody DevolucionRequest request) {
+                                                     @Valid @RequestBody DevolucionRequest request,
+                                                     Authentication authentication) {
+        validarAccesoPermiso(permisoId, authentication);
         return permisoService.registerDevolucion(permisoId, request);
     }
 

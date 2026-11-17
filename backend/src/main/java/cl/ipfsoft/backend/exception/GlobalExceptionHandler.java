@@ -94,11 +94,12 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Cualquier otra excepción no controlada se responde como error 500.
+     * Cualquier otra excepción no controlada se responde como error 500
+     * sin exponer detalles internos al cliente.
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneric(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiError.of(500, "Error interno del servidor: " + ex.getMessage()));
+                .body(ApiError.of(500, "Error interno del servidor"));
     }
 }

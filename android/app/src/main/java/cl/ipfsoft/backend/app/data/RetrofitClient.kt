@@ -18,8 +18,9 @@ object RetrofitClient {
     // localhost visto desde el emulador Android.
     private const val BASE_URL = "http://10.0.2.2:8080/"
 
+    // No registrar cuerpos/cabeceras en producción para evitar exponer tokens o datos sensibles.
     private val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+        level = HttpLoggingInterceptor.Level.NONE
     }
 
     private val okHttp = OkHttpClient.Builder()

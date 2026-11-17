@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <style>
+      .title{font-size:28px;font-weight:700;fill:#102a2c}
+      .sub{font-size:14px;fill:#3e5c5e}
+      .card{fill:#fff;stroke:#0fa3b1;stroke-width:2;rx:12;ry:12}
+      .head{font-size:16px;font-weight:700;fill:#006d77}
+      .txt{font-size:13px;fill:#334155}
+      .pill{fill:#e6fff3;stroke:#1e8e5a;stroke-width:1}
+      .pill2{fill:#fff4de;stroke:#b26a00;stroke-width:1}
+      .pill3{fill:#eaf2ff;stroke:#2459c3;stroke-width:1}
+    </style>
+  </defs>
+  <rect width="100%" height="100%" fill="#f7fbfc"/>
+  <text x="550" y="40" text-anchor="middle" class="title">Módulos y Funcionalidades del Sistema</text>
+  <text x="550" y="64" text-anchor="middle" class="sub">Visión funcional por dominios (web, API y app Android)</text>
+
+  <rect x="40" y="90" width="320" height="150" class="card"/>
+  <text x="60" y="120" class="head">Autenticación y Usuarios</text>
+  <text x="60" y="145" class="txt">• Login JWT, perfil, avatar, cambio de contraseña</text>
+  <text x="60" y="167" class="txt">• Gestión de usuarios del sistema (ADMIN)</text>
+  <text x="60" y="189" class="txt">• Roles: ADMIN, SUPERVISOR, EMPLOYEE</text>
+  <text x="60" y="211" class="txt">• Control de acceso por rol/pertenencia</text>
+
+  <rect x="390" y="90" width="320" height="150" class="card"/>
+  <text x="410" y="120" class="head">Empleados y Horarios</text>
+  <text x="410" y="145" class="txt">• CRUD de empleados y validación RUT</text>
+  <text x="410" y="167" class="txt">• Horarios semanales por empleado</text>
+  <text x="410" y="189" class="txt">• Autoformato de horas (ej. 0730 → 07:30)</text>
+  <text x="410" y="211" class="txt">• PDF de horario semanal</text>
+
+  <rect x="740" y="90" width="320" height="150" class="card"/>
+  <text x="760" y="120" class="head">Asistencia y Marcaje</text>
+  <text x="760" y="145" class="txt">• Marcaje público por código (secuencia diaria)</text>
+  <text x="760" y="167" class="txt">• Consulta de estado y registros por período</text>
+  <text x="760" y="189" class="txt">• Correcciones administrativas y ausencias</text>
+  <text x="760" y="211" class="txt">• App Android de marcaje (pantalla activa)</text>
+
+  <rect x="40" y="270" width="320" height="150" class="card"/>
+  <text x="60" y="300" class="head">Permisos Laborales</text>
+  <text x="60" y="325" class="txt">• Solicitud por horas o por días</text>
+  <text x="60" y="347" class="txt">• Aprobación/rechazo/validación</text>
+  <text x="60" y="369" class="txt">• Devolución/compensación o descuento</text>
+  <text x="60" y="391" class="txt">• Consulta por empleado y listado admin</text>
+
+  <rect x="390" y="270" width="320" height="150" class="card"/>
+  <text x="410" y="300" class="head">Licencias, Horas Extra y Anticipos</text>
+  <text x="410" y="325" class="txt">• Registro de licencias médicas por período</text>
+  <text x="410" y="347" class="txt">• Registro de horas extra por fecha</text>
+  <text x="410" y="369" class="txt">• Anticipos de sueldo con reglas/tope</text>
+  <text x="410" y="391" class="txt">• Integración al cálculo de liquidación</text>
+
+  <rect x="740" y="270" width="320" height="150" class="card"/>
+  <text x="760" y="300" class="head">Remuneraciones</text>
+  <text x="760" y="325" class="txt">• Liquidación individual y masiva por período</text>
+  <text x="760" y="347" class="txt">• Haberes, descuentos e impuesto único</text>
+  <text x="760" y="369" class="txt">• Detalle, marcado de pago y PDF</text>
+  <text x="760" y="391" class="txt">• Lógica orientada a normativa chilena</text>
+
+  <rect x="215" y="450" width="320" height="130" class="card"/>
+  <text x="235" y="480" class="head">Dashboard y Reportes</text>
+  <text x="235" y="505" class="txt">• KPIs de asistencia del período</text>
+  <text x="235" y="527" class="txt">• Gráficos por empleado y reparto</text>
+  <text x="235" y="549" class="txt">• Soporte a la gestión operativa</text>
+
+  <rect x="565" y="450" width="320" height="130" class="card"/>
+  <text x="585" y="480" class="head">Seguridad y Acceso a Datos</text>
+  <text x="585" y="505" class="txt">• JWT, BCrypt, autorización por roles</text>
+  <text x="585" y="527" class="txt">• Validación de entradas y control por pertenencia</text>
+  <text x="585" y="549" class="txt">• Persistencia con JPA/MySQL (consultas parametrizadas)</text>
+
+  <rect x="60" y="592" width="170" height="22" class="pill" rx="11"/>
+  <text x="145" y="607" text-anchor="middle" class="txt">Puede: operar y consultar</text>
+  <rect x="240" y="592" width="250" height="22" class="pill2" rx="11"/>
+  <text x="365" y="607" text-anchor="middle" class="txt">No hace: pagos externos/integraciones bancarias</text>
+  <rect x="500" y="592" width="320" height="22" class="pill3" rx="11"/>
+  <text x="660" y="607" text-anchor="middle" class="txt">No hace: biometría/geolocalización/firma electrónica avanzada</text>
+</svg>

@@ -1,5 +1,8 @@
 package cl.ipfsoft.backend.app.ui.screens
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,13 +12,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -23,6 +31,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cl.ipfsoft.backend.app.data.AttendanceResponse
@@ -32,7 +43,7 @@ import cl.ipfsoft.backend.app.ui.UiState
 
 /**
  * Panel principal del empleado autenticado: consulta sus asistencias, permisos
- * y liquidaciones mediante pestañas.
+ * y liquidaciones.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,37 +52,74 @@ fun HomeScreen(
     onLogout: () -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("Asistencia", "Permisos", "Liquidaciones")
+    val colors = MaterialTheme.colorScheme
+    val headerBrush = Brush.horizontalGradient(
+        listOf(Color(0xFF006D77), Color(0xFF0FA3B1))
+    )
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Bienvenido/a")
+                        Text("Mi Portal", fontWeight = FontWeight.Bold)
                         Text(
                             state.fullName ?: state.username ?: "",
                             style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.9f)
                         )
                     }
                 },
                 actions = {
-                    TextButton(onClick = onLogout) { Text("Salir") }
+                    TextButton(onClick = onLogout) {
+                        Text("Salir", color = Color.White, fontWeight = FontWeight.SemiBold)
+                    }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color(0xFF006D77),
+                    titleContentColor = Color.White
+                )
             )
         },
+        containerColor = colors.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
         ) {
-            // Pestañas
-            Row(modifier = Modifier.fillMaxWidth()) {
-                TextButton(onClick = { tab = 0 }) { Text("Asistencia", fontWeight = if (tab == 0) FontWeight.Bold else FontWeight.Normal) }
-                TextButton(onClick = { tab = 1 }) { Text("Permisos", fontWeight = if (tab == 1) FontWeight.Bold else FontWeight.Normal) }
-                TextButton(onClick = { tab = 2 }) { Text("Liquidaciones", fontWeight = if (tab == 2) FontWeight.Bold else FontWeight.Normal) }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(headerBrush)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) {
+                Text(
+                    "Consulta tu información de forma rápida",
+                    color = Color.White.copy(alpha = 0.95f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
-            HorizontalDivider()
+
+            TabRow(
+                selectedTabIndex = tab,
+                containerColor = colors.surface,
+                contentColor = colors.primary
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = tab == index,
+                        onClick = { tab = index },
+                        text = {
+                            Text(
+                                title,
+                                fontWeight = if (tab == index) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                    )
+                }
+            }
 
             when (tab) {
                 0 -> AsistenciaTab(state.attendances)
@@ -84,68 +132,159 @@ fun HomeScreen(
 
 @Composable
 private fun AsistenciaTab(attendances: List<AttendanceResponse>) {
-    LazyColumn(Modifier.padding(16.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         if (attendances.isEmpty()) {
-            item { Text("Sin registros de asistencia") }
+            item { EmptyCard("Sin registros de asistencia") }
             return@LazyColumn
         }
         items(attendances) { a ->
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(a.date, modifier = Modifier.weight(1f))
-                Text(a.entryTime?.take(5) ?: "-")
-                Text(a.exitTime?.take(5) ?: "-", modifier = Modifier.padding(start = 12.dp))
-                val estado = when {
-                    a.absence -> "Ausente"
-                    a.medicalLicense -> "Licencia"
-                    a.complete -> "Completo"
-                    else -> "Incompleto"
+            InfoCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(a.date, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    EstadoChip(
+                        when {
+                            a.absence -> "Ausente"
+                            a.medicalLicense -> "Licencia"
+                            a.complete -> "Completo"
+                            else -> "Incompleto"
+                        }
+                    )
                 }
-                Text(estado, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(start = 8.dp))
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    DatoMini("Entrada", a.entryTime?.take(5) ?: "-")
+                    DatoMini("Salida", a.exitTime?.take(5) ?: "-")
+                }
             }
-            HorizontalDivider()
         }
     }
 }
 
 @Composable
 private fun PermisosTab(permisos: List<PermisoLaboralResponse>) {
-    LazyColumn(Modifier.padding(16.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         if (permisos.isEmpty()) {
-            item { Text("Sin permisos solicitados") }
+            item { EmptyCard("Sin permisos solicitados") }
             return@LazyColumn
         }
         items(permisos) { p ->
-            Column(Modifier.padding(vertical = 8.dp)) {
-                Text("${p.date} · ${tipoPermiso(p)}", fontWeight = FontWeight.Bold)
-                Text(p.motivo ?: "")
-                Text("Estado: ${p.estado}", style = MaterialTheme.typography.bodySmall)
+            InfoCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(p.date ?: "-", fontWeight = FontWeight.Bold)
+                    EstadoChip(p.estado ?: "—")
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(tipoPermiso(p), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
+                if (!p.motivo.isNullOrBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(p.motivo ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            HorizontalDivider()
         }
     }
 }
 
 @Composable
 private fun LiquidacionesTab(liquidaciones: List<LiquidacionResponse>) {
-    LazyColumn(Modifier.padding(16.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         if (liquidaciones.isEmpty()) {
-            item { Text("Sin liquidaciones generadas") }
+            item { EmptyCard("Sin liquidaciones generadas") }
             return@LazyColumn
         }
         items(liquidaciones) { l ->
-            Column(Modifier.padding(vertical = 8.dp)) {
+            InfoCard {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Período ${l.periodMonth.toString().padStart(2, '0')}/${l.periodYear}",
+                        fontWeight = FontWeight.Bold
+                    )
+                    EstadoChip(if (l.pagada) "Pagada" else "Pendiente")
+                }
+                Spacer(Modifier.height(8.dp))
+                Text("Líquido a pagar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
-                    "Período ${l.periodMonth.toString().padStart(2, '0')}/${l.periodYear}",
-                    fontWeight = FontWeight.Bold,
+                    moneda(l.liquidoAPagar),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Text("Líquido a pagar: ${moneda(l.liquidoAPagar)}")
-                Text("Estado: ${if (l.pagada) "Pagada" else "Pendiente"}", style = MaterialTheme.typography.bodySmall)
             }
-            HorizontalDivider()
         }
+    }
+}
+
+@Composable
+private fun InfoCard(content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(Modifier.padding(16.dp), content = content)
+    }
+}
+
+@Composable
+private fun EmptyCard(text: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f))
+    ) {
+        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+            Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+@Composable
+private fun EstadoChip(text: String) {
+    val (bg, fg) = when (text.lowercase()) {
+        "completo", "pagada", "aprobado" -> Color(0xFFE6FFF3) to Color(0xFF1E8E5A)
+        "ausente", "rechazado" -> Color(0xFFFFECEC) to Color(0xFFD64545)
+        "incompleto", "pendiente" -> Color(0xFFFFF4DE) to Color(0xFFB26A00)
+        else -> Color(0xFFEAF2FF) to Color(0xFF2459C3)
+    }
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(bg)
+            .padding(horizontal = 10.dp, vertical = 5.dp)
+    ) {
+        Text(text, color = fg, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun DatoMini(label: String, value: String) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -153,7 +292,7 @@ private fun tipoPermiso(p: PermisoLaboralResponse): String {
     val cant = p.horas?.takeIf { p.tipo == "POR_HORA" }?.let { "${it}h" }
         ?: p.dias.takeIf { p.tipo == "POR_DIA" }?.let { "${it} día/s" }
         ?: ""
-    return if (p.tipo == "POR_HORA") "Por horas (${cant})" else "Por día (${cant})"
+    return if (p.tipo == "POR_HORA") "Por horas ($cant)" else "Por día ($cant)"
 }
 
 private fun moneda(valor: Double?): String {

@@ -14,7 +14,7 @@ interface ApiService {
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): AuthResponse
 
-    // ----- Marcaje (kiosco, público) -----
+    // ----- Marcaje de asistencia (público) -----
     @POST("api/attendance/mark")
     suspend fun mark(@Body request: MarkRequest): MarkResponse
 
