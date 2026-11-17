@@ -147,6 +147,16 @@ private const val BASE_URL = "http://100.73.41.33:8081/"
 No agregar `/api/` a `BASE_URL`, porque los endpoints de `ApiService` ya
 incluyen ese prefijo (por ejemplo `api/auth/login`).
 
+La app guarda el JWT en DataStore y un interceptor de OkHttp lo envía como
+`Authorization: Bearer <token>` en todas las peticiones. Sin esa cabecera, los
+endpoints de consulta (`/api/employees`, `/api/attendance/employee/*`,
+`/api/permisos/employee/*`, `/api/payroll/liquidaciones/employee/*`) responden
+**401**, aunque el login funcione.
+
+Los usuarios `admin`, `Iván Pizarro` y `Danitza` no tienen `employee_id`
+asociado, así que el panel muestra un selector con los empleados del servidor
+para elegir de quién se consultan los datos.
+
 Luego recompilar el APK. En producción se recomienda HTTPS; si se usa HTTP,
 el dispositivo debe permitir tráfico cleartext (la app ya lo tiene habilitado
 para desarrollo).
