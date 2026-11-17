@@ -11,7 +11,7 @@ fi
 if [[ ! -f .env ]]; then
     cp .env.example .env
     echo "Se creó .env desde .env.example."
-    echo "Edita DB_PASSWORD, JWT_SECRET y ADMIN_PASSWORD y vuelve a ejecutar este script." >&2
+    echo "Edita MYSQL_ROOT_PASSWORD, DB_PASSWORD, JWT_SECRET y ADMIN_PASSWORD y vuelve a ejecutar este script." >&2
     exit 1
 fi
 

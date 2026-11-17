@@ -156,7 +156,7 @@ Para ejecutar la aplicación con Docker Compose, ver
 
 1. Crear la base de datos en MySQL si ejecutas el backend fuera de Docker. La
    configuración por defecto apunta a `localhost:3306/sistema_asis` (usuario
-   `dev`). Con Docker Compose no hay que crearla: el servicio `mysql` la crea
+   `root`). Con Docker Compose no hay que crearla: el servicio `mysql` la crea
    automáticamente con `MYSQL_DATABASE`.
    ```sql
    CREATE DATABASE sistema_asis;
@@ -164,8 +164,8 @@ Para ejecutar la aplicación con Docker Compose, ver
 2. La contraseña **no** se guarda en `application.properties`: se inyecta con la
    variable `DB_PASSWORD` desde `.env` (ver
    [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md)). Para desarrollo
-   local se puede sobrescribir temporalmente `DB_URL`, `DB_USERNAME` y
-   `DB_PASSWORD` con variables de entorno.
+   local se pueden cargar las variables de `.env` antes de Maven con
+   `set -a && source ../.env && set +a`.
 3. Si ya tenías la base creada con los nombres de tabla en inglés, ejecuta
    **una sola vez** el script de migración (con la aplicación detenida):
    ```bash

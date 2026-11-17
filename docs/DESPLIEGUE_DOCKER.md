@@ -11,7 +11,9 @@ Navegador → http://localhost:8081 → nginx (frontend Angular)
                                                    └─ mysql:3306 (MySQL 8.4)
 ```
 
-- MySQL: base `sistema_asis`, usuario `dev`, volumen persistente `mysql_data`.
+- MySQL: base `sistema_asis`, acceso con la cuenta `root`, volumen persistente
+  `mysql_data`. La imagen MySQL no permite `MYSQL_USER=root`, por eso solo se
+  define `MYSQL_ROOT_PASSWORD` y `MYSQL_ROOT_HOST=%`.
 - Backend: disponible en `localhost:8080` para el emulador Android y el proxy de
   Angular en desarrollo; además, dentro de la red de Compose como
   `backend:8080`.
@@ -57,13 +59,12 @@ BACKEND_PORT=8080
 MYSQL_HOST_PORT=3307
 
 MYSQL_ROOT_PASSWORD=PASSWORD_REAL_DE_ROOT
+MYSQL_ROOT_HOST=%
 MYSQL_DATABASE=sistema_asis
-MYSQL_USER=dev
-MYSQL_PASSWORD=PASSWORD_REAL_DE_MYSQL
 
 DB_URL="jdbc:mysql://mysql:3306/sistema_asis?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Santiago"
-DB_USERNAME=dev
-DB_PASSWORD=PASSWORD_REAL_DE_MYSQL
+DB_USERNAME=root
+DB_PASSWORD=PASSWORD_REAL_DE_ROOT
 JWT_SECRET=secreto_aleatorio_de_al_menos_48_caracteres
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=PASSWORD_REAL_DEL_ADMIN
@@ -76,8 +77,13 @@ Para generar un `JWT_SECRET` aleatorio:
 openssl rand -hex 48
 ```
 
-> `DB_PASSWORD` debe coincidir con `MYSQL_PASSWORD`. El backend espera a que
-> MySQL esté sano antes de arrancar; el frontend espera al backend.
+> `DB_PASSWORD` debe coincidir con `MYSQL_ROOT_PASSWORD`, porque el backend se
+> conecta como `root`. El backend espera a que MySQL esté sano antes de arrancar;
+> el frontend espera al backend.
+>
+> Si el volumen `mysql_data` ya se creó con otra contraseña, cambiar la variable
+> no la modifica dentro de MySQL: Hay que cambiar la clave dentro del contenedor
+> o borrar el volumen (esto último pierde los datos).
 
 `CORS_ALLOWED_ORIGINS` debe incluir la URL desde la que abras la app, aunque el
 frontend se sirva desde el mismo nginx (Chrome envía la cabecera `Origin` en las
@@ -121,7 +127,7 @@ Accesos:
 |----------|-----|
 | Web (nginx) | `http://localhost:8081` |
 | API backend | `http://localhost:8080/api/...` |
-| MySQL (host) | `localhost:3307` (usuario `dev`) |
+| MySQL (host) | `localhost:3307` (usuario `root`) |
 
 El esquema se crea automáticamente con `JPA_DDL_AUTO=update` y el usuario
 administrador se inicializa con `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
@@ -174,13 +180,13 @@ docker compose up -d --force-recreate
 El volumen `mysql_data` conserva los datos. Para exportar:
 
 ```bash
-docker compose exec -T mysql mysqldump -u dev -p sistema_asis > backup_sistema_asis.sql
+docker compose exec -T mysql mysqldump -u root -p sistema_asis > backup_sistema_asis.sql
 ```
 
 Restaurar:
 
 ```bash
-docker compose exec -T mysql mysql -u dev -p sistema_asis < backup_sistema_asis.sql
+docker compose exec -T mysql mysql -u root -p sistema_asis < backup_sistema_asis.sql
 ```
 
 Guarda el dump en un lugar seguro y no lo subas al repositorio.
@@ -188,8 +194,8 @@ Guarda el dump en un lugar seguro y no lo subas al repositorio.
 ## 7. Recomendaciones de seguridad
 
 - No publicar logs con secretos ni commitear `.env`.
-- Cambiar `ADMIN_PASSWORD`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` y
-  `JWT_SECRET` antes del primer acceso.
+- Cambiar `ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD` y `JWT_SECRET` antes del
+  primer acceso.
 - Usar HTTPS delante del puerto HTTP si la aplicación se expone fuera de la red local.
 - No exponer el puerto `3307` fuera de la máquina de desarrollo.
 
@@ -197,7 +203,8 @@ Guarda el dump en un lugar seguro y no lo subas al repositorio.
 
 | Síntoma | Revisión |
 |---------|----------|
-| el backend no arranca y dice `Access denied` | `DB_USERNAME` / `DB_PASSWORD` en `.env`; deben coincidir con `MYSQL_USER` / `MYSQL_PASSWORD` |
+| el backend no arranca y dice `Access denied` | `DB_USERNAME=root` y `DB_PASSWORD` en `.env`; la clave debe coincidir con `MYSQL_ROOT_PASSWORD` |
+| el backend dice `Host ... is not allowed to connect` | `MYSQL_ROOT_HOST=%` en `.env` y volumen `mysql_data` creado con ese valor |
 | `Communications link failure` | revisar que el servicio `mysql` esté `healthy` en `docker compose ps` |
 | el puerto 3307 está ocupado | cambiar `MYSQL_HOST_PORT` en `.env` y recrear |
 | la web carga pero los datos no | `docker compose logs frontend`, `docker compose logs backend`, verificar que `/api` llegue a `backend:8080` |
