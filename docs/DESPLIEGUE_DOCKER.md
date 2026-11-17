@@ -68,6 +68,12 @@ openssl rand -hex 48
 > La contraseña de MySQL **no** está en `application.properties`: ese archivo
 > solo contiene `${DB_PASSWORD:}`. El valor real se inyecta desde `.env` al
 > contenedor del backend.
+>
+> Si MySQL está en el **mismo servidor** donde corre Docker (como en este
+> despliegue), cambia el host en `DB_URL` a `host.docker.internal`:
+> `jdbc:mysql://host.docker.internal:3306/sistema_asis?...`. El archivo
+> `docker-compose.yml` ya incluye `host-gateway` para que eso funcione. Desde
+> otro servidor se usa directamente la IP `100.73.41.33`.
 
 Si el frontend se sirve desde otro dominio/origen, ajustar
 `CORS_ALLOWED_ORIGINS` con comas, por ejemplo:
