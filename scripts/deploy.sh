@@ -28,4 +28,4 @@ echo "Estado de los contenedores:"
 docker compose ps
 
 echo
-echo "Aplicación disponible en http://100.73.41.33:8081"
+echo "Aplicación disponible en http://localhost:${HTTP_PORT:-8081}"

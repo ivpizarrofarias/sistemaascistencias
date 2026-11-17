@@ -3,7 +3,7 @@ services:
     build: ./backend
     restart: unless-stopped
     environment:
-      DB_URL: "${DB_URL:-jdbc:mysql://100.73.41.33:3306/sistema_asis?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Santiago}"
+      DB_URL: "${DB_URL:-jdbc:mysql://host.docker.internal:3306/sistema_asis?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Santiago}"
       DB_USERNAME: ${DB_USERNAME:-dev}
       DB_PASSWORD: ${DB_PASSWORD:-}
       DB_INIT_TIMEOUT: ${DB_INIT_TIMEOUT:-120000}
@@ -17,7 +17,7 @@ services:
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:*,http://127.0.0.1:*}
     expose:
       - "8080"
-    # Permite conectar a MySQL cuando está en el mismo servidor que Docker.
+    # Permite al contenedor conectar a MySQL que corre en la máquina host.
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

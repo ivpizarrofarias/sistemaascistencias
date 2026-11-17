@@ -35,13 +35,26 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 - **Almacenamiento local:** DataStore 1.1.1 (sesión/token)
 - **Build:** Gradle 8.9, AGP 8.5.2, `minSdk 24`, `targetSdk 35`, `compileSdk 35`
 
+### Docker
+- Docker Engine con plugin `docker compose` (o Docker Desktop).
+- `docker-compose.yml`: backend + frontend, `HTTP_PORT` configurable y
+  `host.docker.internal:host-gateway` para alcanzar MySQL en el host.
+- `backend/Dockerfile`: multi-stage `maven:3.9-eclipse-temurin-17` →
+  `eclipse-temurin:17-jre-jammy`, JAR en `/app/app.jar`, usuario no root.
+- `frontend/Dockerfile`: multi-stage `node:20-alpine` → `nginx:1.27-alpine`,
+  sirve `dist/sistema-asistencias/browser`.
+- `frontend/nginx.conf`: proxy `/api/` a `backend:8080` y fallback SPA.
+- `scripts/deploy.sh`: verifica Docker/`.env` y levanta los servicios.
+- Guía completa: `docs/DESPLIEGUE_DOCKER.md`.
+
 ### Infraestructura/entorno
+- **Docker Engine + Docker Compose** para levantar backend y frontend en contenedores
 - API por defecto en `http://localhost:8080`
 - Frontend dev en `http://localhost:4200` con proxy a `/api`
 - Android emulador usa `http://10.0.2.2:8080/` para acceder al backend local
   (valor por defecto en `RetrofitClient.kt`)
-- Despliegue Docker en servidor propio: `http://100.73.41.33:8081` (cambiar
-  `BASE_URL` temporalmente para apuntar ahí)
+- Con Docker Compose la app queda en `http://localhost:8081` (proxy `/api` al
+  backend)
 
 ## 3. Requisitos funcionales (qué puede hacer el sistema)
 
