@@ -18,6 +18,7 @@ import cl.ipfsoft.backend.app.data.RetrofitClient
 import cl.ipfsoft.backend.app.data.TokenStore
 import cl.ipfsoft.backend.app.ui.MainViewModel
 import cl.ipfsoft.backend.app.ui.screens.HomeScreen
+import cl.ipfsoft.backend.app.ui.screens.LoginScreen
 import cl.ipfsoft.backend.app.ui.screens.MarkScreen
 import cl.ipfsoft.backend.app.ui.theme.SistemaAsistenciasTheme
 
@@ -70,10 +71,18 @@ private fun AppRoot(viewModel: MainViewModel) {
                         onLogout = { viewModel.logout() },
                     )
                 }
+                state.showLogin -> {
+                    LoginScreen(
+                        state = state,
+                        onLogin = { u, p -> viewModel.login(u, p) },
+                        onBack = { viewModel.openKiosk() },
+                    )
+                }
                 else -> {
                     MarkScreen(
                         state = state,
                         onMark = { viewModel.mark(it) },
+                        onOpenLogin = { viewModel.openLogin() },
                     )
                 }
             }

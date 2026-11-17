@@ -7,6 +7,8 @@ import cl.ipfsoft.backend.app.data.PermisoLaboralResponse
 
 /** Estado de UI compartido por las pantallas de la app. */
 data class UiState(
+    /** true muestra el portal del empleado; false muestra el kiosco de marcaje. */
+    val showLogin: Boolean = false,
     val isAuthenticated: Boolean = false,
     val token: String? = null,
     val username: String? = null,

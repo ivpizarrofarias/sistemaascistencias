@@ -25,6 +25,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +53,7 @@ import cl.ipfsoft.backend.app.ui.UiState
 fun MarkScreen(
     state: UiState,
     onMark: (String) -> Unit,
+    onOpenLogin: () -> Unit,
 ) {
     var codigo by remember { mutableStateOf("") }
     val colors = MaterialTheme.colorScheme
@@ -192,6 +194,14 @@ fun MarkScreen(
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
+
+                TextButton(onClick = onOpenLogin) {
+                    Text(
+                        "Portal del empleado (iniciar sesión)",
+                        color = Color.White,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }

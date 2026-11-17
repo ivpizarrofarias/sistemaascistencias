@@ -24,6 +24,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,6 +49,7 @@ import cl.ipfsoft.backend.app.ui.UiState
 fun LoginScreen(
     state: UiState,
     onLogin: (String, String) -> Unit,
+    onBack: () -> Unit,
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -165,6 +167,10 @@ fun LoginScreen(
                             Text(if (state.isLoading) "Ingresando..." else "Ingresar", fontWeight = FontWeight.Bold)
                         }
                     }
+                }
+
+                TextButton(onClick = onBack) {
+                    Text("Volver al marcaje", color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
             }
         }

@@ -35,6 +35,16 @@ class MainViewModel(
         }
     }
 
+    /** Muestra el portal del empleado (pantalla de login). */
+    fun openLogin() {
+        _state.value = _state.value.copy(showLogin = true, error = null)
+    }
+
+    /** Vuelve al kiosco de marcaje. */
+    fun openKiosk() {
+        _state.value = _state.value.copy(showLogin = false, error = null)
+    }
+
     /** Inicia sesión con usuario y contraseña. */
     fun login(username: String, password: String) {
         viewModelScope.launch {
