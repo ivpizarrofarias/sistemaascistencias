@@ -74,6 +74,7 @@ entrada registrada y el siguiente paso indicado por la app.*
 - Backend: `http://localhost:8080`
 - Frontend: `http://localhost:4200` (proxy `/api` al backend)
 - MySQL: `localhost:3306`
+- Producción Docker: `http://100.73.41.33:8081` (proxy `/api` al backend)
 - Emulador Android → backend del host: `http://10.0.2.2:8080/`
 - Dispositivo físico → backend del host: usar la IP de la red local
   (p. ej. `http://192.168.1.10:8080/`)
@@ -221,7 +222,7 @@ La base URL de la API está en
 - `http://10.0.2.2:8080/` → `localhost` de la máquina vista desde el **emulador**.
 - Para **dispositivo físico**, cambiar por la IP local de la máquina
   (p. ej. `http://192.168.1.10:8080/`).
-- Con el despliegue Docker en el servidor propio: `http://IP_DEL_SERVIDOR/api/`.
+- Con el despliegue Docker en el servidor propio: `http://100.73.41.33:8081/`.
 
 ### Funcionalidades de la app
 

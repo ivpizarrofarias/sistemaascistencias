@@ -6,7 +6,7 @@ base de datos MySQL `sistema_asis` es externa, en `100.73.41.33:3306`.
 ## Arquitectura
 
 ```
-Internet → :80 → nginx (frontend Angular)
+Internet → :8081 → nginx (frontend Angular)
                     └─ /api/* → backend:8080 (Spring Boot)
                                     └─ MySQL externo 100.73.41.33:3306/sistema_asis
 ```
@@ -21,7 +21,8 @@ configurado en `HTTP_PORT` (80 por defecto).
 - Docker Engine con el plugin `docker compose` (o Docker Desktop).
 - Acceso de red desde el servidor a `100.73.41.33:3306`.
 - Git (o copiar el proyecto por otro medio).
-- Puerto 80 libre, o definir otro valor en `HTTP_PORT`.
+- Puerto `8081` libre en el servidor (el puerto 80 ya lo usa otra aplicación).
+  Si necesitas otro puerto, cámbialo en `HTTP_PORT`.
 
 ## 1. Obtener el código
 
@@ -49,7 +50,7 @@ nano .env
 Valores mínimos que revisar:
 
 ```dotenv
-HTTP_PORT=80
+HTTP_PORT=8081
 DB_URL="jdbc:mysql://100.73.41.33:3306/sistema_asis?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Santiago"
 DB_USERNAME=dev
 DB_PASSWORD=PASSWORD_REAL_DE_MYSQL
@@ -81,6 +82,14 @@ CORS_ALLOWED_ORIGINS=https://asistencias.ejemplo.cl
 docker compose up -d --build
 ```
 
+O, de forma resumida, usar el script incluido (verifica Docker y que `.env` no
+tenga valores pendientes):
+
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
 Verificar estado y logs:
 
 ```bash
@@ -96,7 +105,7 @@ interno 8080, que no queda expuesto a Internet.
 Acceso web:
 
 ```
-http://IP_DEL_SERVIDOR
+http://100.73.41.33:8081
 ```
 
 Si se cambió `HTTP_PORT`, usar `http://IP_DEL_SERVIDOR:HTTP_PORT`.
@@ -105,12 +114,16 @@ El usuario inicial por defecto es `admin` / `admin123`, pero debe cambiarse en
 
 ## 4. App Android en producción
 
-La app no pasa por nginx: cambiar la URL base en
-`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt` a:
+La app llama al mismo puerto `8081`: las peticiones `api/*` pasan por el proxy
+de nginx hacia el backend. La URL base ya quedó configurada en
+`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt`:
 
 ```kotlin
-private const val BASE_URL = "http://IP_DEL_SERVIDOR/api/"
+private const val BASE_URL = "http://100.73.41.33:8081/"
 ```
+
+No agregar `/api/` a `BASE_URL`, porque los endpoints de `ApiService` ya
+incluyen ese prefijo (por ejemplo `api/auth/login`).
 
 Luego recompilar el APK. En producción se recomienda HTTPS; si se usa HTTP,
 el dispositivo debe permitir tráfico cleartext (la app ya lo tiene habilitado
@@ -148,7 +161,7 @@ Guarda el dump en un lugar seguro y no lo subas al repositorio.
 
 ## 7. Recomendaciones de seguridad
 
-- Usar HTTPS delante del puerto 80 (reverse proxy con certificado
+- Usar HTTPS delante del puerto 8081 (reverse proxy con certificado
   Let's Encrypt o el balanceador del proveedor).
 - Cambiar `ADMIN_PASSWORD` y `JWT_SECRET` antes del primer acceso público.
 - Restringir el acceso a MySQL solo desde la IP del servidor de la app.

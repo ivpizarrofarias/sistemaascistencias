@@ -9,14 +9,13 @@ import java.util.concurrent.TimeUnit
 /**
  * Cliente HTTP de la app mediante Retrofit/OkHttp.
  *
- * La base URL apunta a "10.0.2.2" que, dentro del emulador de Android, representa
- * el "localhost" de la máquina donde corre el backend Spring Boot (puerto 8080).
- * Para un dispositivo físico, cambiar BASE_URL a la IP local de la máquina.
+ * La base URL apunta al despliegue Docker en el servidor propio. Las rutas de
+ * ApiService ya incluyen el prefijo "api/", por eso BASE_URL termina solo en "/".
  */
 object RetrofitClient {
 
-    // localhost visto desde el emulador Android.
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    // Servidor propio: nginx publica el frontend y el proxy /api en el puerto 8081.
+    private const val BASE_URL = "http://100.73.41.33:8081/"
 
     // No registrar cuerpos/cabeceras en producción para evitar exponer tokens o datos sensibles.
     private val logging = HttpLoggingInterceptor().apply {
