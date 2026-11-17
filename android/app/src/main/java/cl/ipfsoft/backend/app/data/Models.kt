@@ -17,6 +17,17 @@ data class AuthResponse(
     @SerializedName("fullName") val fullName: String?,
 )
 
+/** Empleado devuelto por /api/employees (para admin/supervisor). */
+data class EmployeeResponse(
+    val id: Long,
+    @SerializedName("firstName") val firstName: String?,
+    @SerializedName("lastName") val lastName: String?,
+    @SerializedName("fullName") val fullName: String?,
+    val rut: String?,
+    val code: String?,
+    val enabled: Boolean = false,
+)
+
 /** Respuesta de marcaje/estado del marcador. */
 data class MarkResponse(
     @SerializedName("employeeId") val employeeId: Long?,

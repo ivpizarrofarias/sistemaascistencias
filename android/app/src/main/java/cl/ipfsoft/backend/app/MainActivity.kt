@@ -69,6 +69,7 @@ private fun AppRoot(viewModel: MainViewModel) {
                     HomeScreen(
                         state = state,
                         onLogout = { viewModel.logout() },
+                        onSelectEmployee = { viewModel.selectEmployee(it) },
                     )
                 }
                 state.showLogin -> {

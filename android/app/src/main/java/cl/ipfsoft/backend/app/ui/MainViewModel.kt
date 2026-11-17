@@ -3,13 +3,12 @@ package cl.ipfsoft.backend.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.ipfsoft.backend.app.data.ApiService
-import cl.ipfsoft.backend.app.data.AuthResponse
 import cl.ipfsoft.backend.app.data.LoginRequest
 import cl.ipfsoft.backend.app.data.MarkRequest
+import cl.ipfsoft.backend.app.data.TokenHolder
 import cl.ipfsoft.backend.app.data.TokenStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class MainViewModel(
@@ -23,15 +22,18 @@ class MainViewModel(
     /** Intenta restaurar la sesión guardada localmente al iniciar la app. */
     fun restoreSession() {
         viewModelScope.launch {
-            val token = tokenStore.token.first()
-            if (token != null) {
-                _state.value = _state.value.copy(
-                    token = token,
-                    isAuthenticated = true,
-                )
-                val auth = AuthResponse(token, null, null, null, null)
-                loadEmployeeData(auth)
-            }
+            val session = tokenStore.loadSession() ?: return@launch
+            // El interceptor necesita el token en memoria antes de cualquier llamada.
+            TokenHolder.set(session.token)
+            _state.value = _state.value.copy(
+                token = session.token,
+                username = session.username,
+                role = session.role,
+                employeeId = session.employeeId,
+                fullName = session.fullName,
+                isAuthenticated = true,
+            )
+            loadEmployeeData()
         }
     }
 
@@ -52,6 +54,7 @@ class MainViewModel(
             try {
                 val auth = api.login(LoginRequest(username, password))
                 tokenStore.saveSession(auth)
+                TokenHolder.set(auth.token)
                 _state.value = _state.value.copy(
                     token = auth.token,
                     username = auth.username,
@@ -62,7 +65,7 @@ class MainViewModel(
                     isLoading = false,
                     error = null,
                 )
-                loadEmployeeData(auth)
+                loadEmployeeData()
             } catch (e: Exception) {
                 _state.value = _state.value.copy(isLoading = false, error = mensajeError(e))
             }
@@ -73,6 +76,7 @@ class MainViewModel(
     fun logout() {
         viewModelScope.launch {
             tokenStore.clear()
+            TokenHolder.clear()
             _state.value = UiState()
         }
     }
@@ -103,9 +107,13 @@ class MainViewModel(
         }
     }
 
-    /** Carga asistencias, permisos y liquidaciones del empleado autenticado. */
-    private suspend fun loadEmployeeData(auth: AuthResponse) {
-        val empId = auth.employeeId ?: _state.value.employeeId ?: return
+    /** Carga asistencias, permisos y liquidaciones del empleado indicado. */
+    private suspend fun loadEmployeeData(empId: Long? = _state.value.employeeId) {
+        if (empId == null) {
+            // ADMIN/SUPERVISOR sin empleado propio: listar empleados y elegir el primero.
+            loadEmployees()
+            return
+        }
         try {
             val attendances = api.listAttendances(empId, null, null)
             val permisos = api.listPermisos(empId, null, null)
@@ -120,6 +128,22 @@ class MainViewModel(
         } catch (e: Exception) {
             _state.value = _state.value.copy(error = mensajeError(e))
         }
+    }
+
+    /** Obtiene el listado de empleados del servidor (solo ADMIN/SUPERVISOR). */
+    private suspend fun loadEmployees() {
+        try {
+            val lista = api.listEmployees()
+            _state.value = _state.value.copy(employees = lista)
+            lista.firstOrNull()?.let { loadEmployeeData(it.id) }
+        } catch (e: Exception) {
+            _state.value = _state.value.copy(error = mensajeError(e))
+        }
+    }
+
+    /** Cambia el empleado cuyos datos se muestran en el portal. */
+    fun selectEmployee(id: Long) {
+        viewModelScope.launch { loadEmployeeData(id) }
     }
 
     private fun mensajeError(e: Exception): String =

@@ -21,6 +21,10 @@ interface ApiService {
     @POST("api/attendance/status")
     suspend fun status(@Body request: MarkRequest): MarkResponse
 
+    // ----- Listado de empleados (ADMIN/SUPERVISOR) -----
+    @GET("api/employees")
+    suspend fun listEmployees(): List<EmployeeResponse>
+
     // ----- Asistencias del empleado -----
     @GET("api/attendance/employee/{employeeId}")
     suspend fun listAttendances(

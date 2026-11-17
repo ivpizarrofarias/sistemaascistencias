@@ -1,6 +1,7 @@
 package cl.ipfsoft.backend.app.ui
 
 import cl.ipfsoft.backend.app.data.AttendanceResponse
+import cl.ipfsoft.backend.app.data.EmployeeResponse
 import cl.ipfsoft.backend.app.data.LiquidacionResponse
 import cl.ipfsoft.backend.app.data.MarkResponse
 import cl.ipfsoft.backend.app.data.PermisoLaboralResponse
@@ -21,4 +22,6 @@ data class UiState(
     val attendances: List<AttendanceResponse> = emptyList(),
     val permisos: List<PermisoLaboralResponse> = emptyList(),
     val liquidaciones: List<LiquidacionResponse> = emptyList(),
+    /** Empleados disponibles para admin/supervisor sin empleado propio. */
+    val employees: List<EmployeeResponse> = emptyList(),
 )

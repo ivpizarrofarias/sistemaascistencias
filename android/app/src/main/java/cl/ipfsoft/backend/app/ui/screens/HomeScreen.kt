@@ -13,8 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -27,6 +30,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -37,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cl.ipfsoft.backend.app.data.AttendanceResponse
+import cl.ipfsoft.backend.app.data.EmployeeResponse
 import cl.ipfsoft.backend.app.data.LiquidacionResponse
 import cl.ipfsoft.backend.app.data.PermisoLaboralResponse
 import cl.ipfsoft.backend.app.ui.UiState
@@ -50,6 +55,7 @@ import cl.ipfsoft.backend.app.ui.UiState
 fun HomeScreen(
     state: UiState,
     onLogout: () -> Unit,
+    onSelectEmployee: (Long) -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Asistencia", "Permisos", "Liquidaciones")
@@ -102,6 +108,12 @@ fun HomeScreen(
                 )
             }
 
+            EmployeeSelector(
+                employees = state.employees,
+                selectedId = state.employeeId,
+                onSelect = onSelectEmployee,
+            )
+
             TabRow(
                 selectedTabIndex = tab,
                 containerColor = colors.surface,
@@ -129,6 +141,47 @@ fun HomeScreen(
         }
     }
 }
+
+/** Selector visible para ADMIN/SUPERVISOR, que no tienen empleado propio. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun EmployeeSelector(
+    employees: List<EmployeeResponse>,
+    selectedId: Long?,
+    onSelect: (Long) -> Unit,
+) {
+    if (employees.isEmpty()) return
+    var expanded by remember { mutableStateOf(false) }
+    val seleccionado = employees.firstOrNull { it.id == selectedId } ?: employees.first()
+
+    Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+        Button(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Empleado: ${nombreEmpleado(seleccionado)}")
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            employees.forEach { emp ->
+                DropdownMenuItem(
+                    text = { Text(nombreEmpleado(emp)) },
+                    onClick = {
+                        onSelect(emp.id)
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+private fun nombreEmpleado(emp: EmployeeResponse): String =
+    emp.fullName?.takeIf { it.isNotBlank() }
+        ?: listOfNotNull(emp.firstName, emp.lastName).joinToString(" ").ifBlank { emp.rut ?: "Empleado ${emp.id}" }
 
 @Composable
 private fun AsistenciaTab(attendances: List<AttendanceResponse>) {

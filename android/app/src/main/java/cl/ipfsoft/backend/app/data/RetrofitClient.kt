@@ -1,6 +1,7 @@
 package cl.ipfsoft.backend.app.data
 
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -22,8 +23,25 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.NONE
     }
 
+    /**
+     * Adjunta el JWT a todas las peticiones. Los endpoints públicos (login y
+     * marcaje) ignoran la cabecera, así que es seguro enviarla siempre.
+     */
+    private val authInterceptor = okhttp3.Interceptor { chain ->
+        val token = TokenHolder.token
+        val request: Request = if (!token.isNullOrBlank()) {
+            chain.request().newBuilder()
+                .header("Authorization", "Bearer $token")
+                .build()
+        } else {
+            chain.request()
+        }
+        chain.proceed(request)
+    }
+
     private val okHttp = OkHttpClient.Builder()
         .addInterceptor(logging)
+        .addInterceptor(authInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
