@@ -99,17 +99,23 @@ entrada registrada y el siguiente paso indicado por la app.*
 El detalle de requisitos funcionales, no funcionales y alcance está en
 [`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md).
 
+Para subir la aplicación a un servidor propio con Docker, ver
+[`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md).
+
 ---
 
 ## 1. Backend (API REST)
 
-1. Crear la base de datos en MySQL (usuario/contraseña según
-   `backend/src/main/resources/application.properties`):
+1. Crear la base de datos en MySQL. La configuración por defecto ya apunta a la
+   base del servidor (`100.73.41.33:3306/sistema_asis`, usuario `dev`):
    ```sql
    CREATE DATABASE sistema_asis;
    ```
-2. Ajustar `spring.datasource.password` en
-   `backend/src/main/resources/application.properties`.
+2. La contraseña **no** se guarda en `application.properties`: se inyecta con la
+   variable `DB_PASSWORD` desde `.env` (ver
+   [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md)). Para desarrollo
+   local se puede sobrescribir temporalmente `DB_URL`, `DB_USERNAME` y
+   `DB_PASSWORD` con variables de entorno.
 3. Si ya tenías la base creada con los nombres de tabla en inglés, ejecuta
    **una sola vez** el script de migración (con la aplicación detenida):
    ```bash
@@ -215,6 +221,7 @@ La base URL de la API está en
 - `http://10.0.2.2:8080/` → `localhost` de la máquina vista desde el **emulador**.
 - Para **dispositivo físico**, cambiar por la IP local de la máquina
   (p. ej. `http://192.168.1.10:8080/`).
+- Con el despliegue Docker en el servidor propio: `http://IP_DEL_SERVIDOR/api/`.
 
 ### Funcionalidades de la app
 

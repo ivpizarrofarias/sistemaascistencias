@@ -1,0 +1,166 @@
+# Despliegue con Docker (servidor propio)
+
+Este despliegue levanta **solo** el frontend y el backend en contenedores. La
+base de datos MySQL `sistema_asis` es externa, en `100.73.41.33:3306`.
+
+## Arquitectura
+
+```
+Internet → :80 → nginx (frontend Angular)
+                    └─ /api/* → backend:8080 (Spring Boot)
+                                    └─ MySQL externo 100.73.41.33:3306/sistema_asis
+```
+
+El frontend usa rutas relativas `/api`, por lo que **no depende de CORS** en
+producción: nginx reenvía esas peticiones al backend dentro de la red de Docker.
+El backend no publica su puerto 8080 directamente; solo se expone el puerto HTTP
+configurado en `HTTP_PORT` (80 por defecto).
+
+## Requisitos en el servidor
+
+- Docker Engine con el plugin `docker compose` (o Docker Desktop).
+- Acceso de red desde el servidor a `100.73.41.33:3306`.
+- Git (o copiar el proyecto por otro medio).
+- Puerto 80 libre, o definir otro valor en `HTTP_PORT`.
+
+## 1. Obtener el código
+
+```bash
+git clone https://github.com/ivpizarrofarias/sistemaascistencias.git
+cd sistemaascistencias
+```
+
+Si el servidor ya tiene el repo, actualízalo antes de desplegar:
+
+```bash
+git pull
+```
+
+## 2. Configurar variables de entorno
+
+La plantilla está en `.env.example`. **No subir `.env` a GitHub**: ya está
+ignorado por `.gitignore`.
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+Valores mínimos que revisar:
+
+```dotenv
+HTTP_PORT=80
+DB_URL="jdbc:mysql://100.73.41.33:3306/sistema_asis?useUnicode=true&characterEncoding=UTF-8&serverTimezone=America/Santiago"
+DB_USERNAME=dev
+DB_PASSWORD=PASSWORD_REAL_DE_MYSQL
+JWT_SECRET=secreto_aleatorio_de_al_menos_48_caracteres
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=PASSWORD_REAL_DEL_ADMIN
+```
+
+Para generar un `JWT_SECRET` aleatorio:
+
+```bash
+openssl rand -hex 48
+```
+
+> La contraseña de MySQL **no** está en `application.properties`: ese archivo
+> solo contiene `${DB_PASSWORD:}`. El valor real se inyecta desde `.env` al
+> contenedor del backend.
+
+Si el frontend se sirve desde otro dominio/origen, ajustar
+`CORS_ALLOWED_ORIGINS` con comas, por ejemplo:
+
+```dotenv
+CORS_ALLOWED_ORIGINS=https://asistencias.ejemplo.cl
+```
+
+## 3. Levantar los servicios
+
+```bash
+docker compose up -d --build
+```
+
+Verificar estado y logs:
+
+```bash
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+```
+
+El backend espera a que MySQL acepte conexiones antes de marcarse sano; el
+frontend arranca recién después. El healthcheck del backend usa un puerto TCP
+interno 8080, que no queda expuesto a Internet.
+
+Acceso web:
+
+```
+http://IP_DEL_SERVIDOR
+```
+
+Si se cambió `HTTP_PORT`, usar `http://IP_DEL_SERVIDOR:HTTP_PORT`.
+El usuario inicial por defecto es `admin` / `admin123`, pero debe cambiarse en
+`.env` antes de exponer el sistema.
+
+## 4. App Android en producción
+
+La app no pasa por nginx: cambiar la URL base en
+`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt` a:
+
+```kotlin
+private const val BASE_URL = "http://IP_DEL_SERVIDOR/api/"
+```
+
+Luego recompilar el APK. En producción se recomienda HTTPS; si se usa HTTP,
+el dispositivo debe permitir tráfico cleartext (la app ya lo tiene habilitado
+para desarrollo).
+
+## 5. Actualizaciones
+
+```bash
+cd sistemaascistencias
+git pull
+docker compose up -d --build
+```
+
+Si cambió solo `.env`, basta con recrear los contenedores:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+## 6. Backup de la base de datos
+
+El backup se hace en el MySQL externo, no en los contenedores:
+
+```bash
+mysqldump -h 100.73.41.33 -P 3306 -u dev -p sistema_asis > backup_sistema_asis.sql
+```
+
+Restaurar:
+
+```bash
+mysql -h 100.73.41.33 -P 3306 -u dev -p sistema_asis < backup_sistema_asis.sql
+```
+
+Guarda el dump en un lugar seguro y no lo subas al repositorio.
+
+## 7. Recomendaciones de seguridad
+
+- Usar HTTPS delante del puerto 80 (reverse proxy con certificado
+  Let's Encrypt o el balanceador del proveedor).
+- Cambiar `ADMIN_PASSWORD` y `JWT_SECRET` antes del primer acceso público.
+- Restringir el acceso a MySQL solo desde la IP del servidor de la app.
+- No publicar logs con secretos ni commitear `.env`.
+- Si usaste un token de GitHub para subir el código, revócalo después del push.
+
+## Solución de problemas
+
+| Síntoma | Revisión |
+|---------|----------|
+| el backend no arranca y dice `Access denied` | `DB_USERNAME` / `DB_PASSWORD` en `.env`; permisos de `dev` desde la IP del servidor |
+| `Communications link failure` | conectividad al puerto 3306, firewall/security group |
+| la web carga pero los datos no | `docker compose logs frontend`, `docker compose logs backend`, verificar que `/api` llegue a `backend:8080` |
+| 404 al recargar una ruta Angular | confirmar que nginx usa `try_files $uri $uri/ /index.html;` |
+| el frontend no compila | revisar `frontend/package-lock.json` y logs de `docker compose build frontend` |

@@ -1,0 +1,19 @@
+# Secretos y configuración local
+.env
+.env.local
+.env.*.local
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+
+# Maven / Java
+target/
+
+# IDE / SO
+.idea/
+.vscode/
+*.iml
+.DS_Store
+*.log

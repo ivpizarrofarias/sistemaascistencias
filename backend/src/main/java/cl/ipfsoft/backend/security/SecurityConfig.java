@@ -1,5 +1,6 @@
 package cl.ipfsoft.backend.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.time.Clock;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -34,6 +36,10 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    /** Orígenes permitidos por CORS, configurables con CORS_ALLOWED_ORIGINS. */
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
 
     /** Codificador de contraseñas: se usa BCrypt (hash con "sal" para mayor seguridad). */
     @Bean
@@ -92,16 +98,14 @@ public class SecurityConfig {
     }
 
     /**
-     * Configuración de CORS: se permite el frontend (React/Vite).
-     * En desarrollo se permiten los orígenes de localhost en cualquier puerto
-     * (por ejemplo http://localhost:5173, http://localhost:5174, etc.), porque
-     * Vite puede elegir puertos alternos si el 5173 está ocupado.
+     * Configuración de CORS. Por defecto se permiten los orígenes locales de
+     * desarrollo; en producción se define CORS_ALLOWED_ORIGINS con el dominio
+     * real (separando varios orígenes con comas).
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Patrones de orígenes permitidos (localhost con cualquier puerto).
-        config.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
+        config.setAllowedOriginPatterns(Arrays.asList(allowedOrigins));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
