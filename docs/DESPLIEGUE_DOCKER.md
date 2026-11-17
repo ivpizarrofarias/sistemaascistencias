@@ -23,6 +23,12 @@ configurado en `HTTP_PORT` (80 por defecto).
 - Git (o copiar el proyecto por otro medio).
 - Puerto `8081` libre en el servidor (el puerto 80 ya lo usa otra aplicación).
   Si necesitas otro puerto, cámbialo en `HTTP_PORT`.
+- Si UFW está activo, permitir el puerto web y el acceso de los contenedores a
+  MySQL local (en este servidor ya quedó aplicado):
+  ```bash
+  sudo ufw allow 8081/tcp
+  sudo ufw allow from 172.16.0.0/12 to any port 3306 proto tcp
+  ```
 
 ## 1. Obtener el código
 
