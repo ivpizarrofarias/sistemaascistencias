@@ -9,17 +9,17 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 ## 2. Tecnologías utilizadas
 
 ### Backend
-- **Lenguaje:** Java 17
+- **Lenguaje:** Java 17.0.15 LTS
 - **Framework:** Spring Boot 4.0.8 (Web MVC, Data JPA, Validation, Security)
 - **Seguridad:** Spring Security + JWT (`jjwt` 0.12.6), contraseñas con BCrypt, control de acceso por roles (`@PreAuthorize`)
-- **Persistencia:** Spring Data JPA / Hibernate, MySQL 8 (producción/desarrollo), H2 (tests)
+- **Persistencia:** Spring Data JPA / Hibernate, MySQL 8.4 (producción/desarrollo), H2 (tests)
 - **Base de datos:** MySQL (`sistema_asis`), pool HikariCP
 - **PDF:** OpenPDF 1.3.30 (liquidaciones/horarios)
 - **Build:** Maven (`mvnw`), Lombok
 - **Otros:** manejo global de errores (`@RestControllerAdvice`), DTOs y mappers, utilidades (RUT, horarios)
 
 ### Frontend (Web)
-- **Framework:** Angular 21 (standalone components, signals, zoneless)
+- **Framework:** Angular 21.2 (standalone components, signals, zoneless), Node.js 22.23.4 / npm 10.9.9
 - **UI:** Angular Material 21 (tema M3), SCSS
 - **Gráficos:** `ng2-charts` + Chart.js (dashboard)
 - **Comunicación:** `HttpClient`, interceptor JWT, proxy dev `/api` → backend
@@ -31,14 +31,17 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 - **Lenguaje:** Kotlin 2.0.20
 - **UI:** Jetpack Compose (Material 3), Compose BOM 2024.09.03
 - **Arquitectura/UI state:** ViewModel, StateFlow
-- **Red:** Retrofit + OkHttp + Gson (consumo API REST)
-- **Almacenamiento local:** DataStore (sesión/token)
+- **Red:** Retrofit 2.11 + OkHttp 4.12 + Gson 2.11 (consumo API REST), JWT enviado en `Authorization: Bearer`
+- **Almacenamiento local:** DataStore 1.1.1 (sesión/token)
 - **Build:** Gradle 8.9, AGP 8.5.2, `minSdk 24`, `targetSdk 35`, `compileSdk 35`
 
 ### Infraestructura/entorno
 - API por defecto en `http://localhost:8080`
 - Frontend dev en `http://localhost:4200` con proxy a `/api`
 - Android emulador usa `http://10.0.2.2:8080/` para acceder al backend local
+  (valor por defecto en `RetrofitClient.kt`)
+- Despliegue Docker en servidor propio: `http://100.73.41.33:8081` (cambiar
+  `BASE_URL` temporalmente para apuntar ahí)
 
 ## 3. Requisitos funcionales (qué puede hacer el sistema)
 
@@ -111,6 +114,9 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 - **No** garantiza por sí solo cumplimiento productivo sin configuración segura: requiere HTTPS, gestión de secretos, CORS de producción, backups/monitoreo y endurecimiento de infraestructura.
 - **No** implementa biometría, geolocalización, reconocimiento facial ni control de dispositivo avanzado para marcaje (el marcaje es por código).
 - **No** incluye multiempresa/multitenencia, internacionalización completa ni configuración dinámica de todas las normas laborales sin cambios de código/parámetros.
+- **No** conecta el frontend ni la app Android directamente a MySQL: solo el backend accede a la BD.
+- **No** envía notificaciones push, correo ni SMS; **no** tiene modo offline ni sincronización diferida.
+- **No** exporta a Excel (los reportes son PDF); **no** incluye recuperación de contraseña por correo, rate limiting ni auditoría avanzada sin trabajo adicional.
 
 ## 6. Módulos y entidades principales (dominio)
 - Empleados, Usuarios/Roles

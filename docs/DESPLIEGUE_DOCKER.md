@@ -136,16 +136,22 @@ El usuario inicial por defecto es `admin` / `admin123`, pero debe cambiarse en
 
 ## 4. App Android en producción
 
-La app llama al mismo puerto `8081`: las peticiones `api/*` pasan por el proxy
-de nginx hacia el backend. La URL base ya quedó configurada en
+**El repo queda configurado para desarrollo local**. La URL base está en
 `android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt`:
+
+```kotlin
+private const val BASE_URL = "http://10.0.2.2:8080/"
+```
+
+Para probar contra el despliegue Docker del servidor, cambiar esa línea por:
 
 ```kotlin
 private const val BASE_URL = "http://100.73.41.33:8081/"
 ```
 
-No agregar `/api/` a `BASE_URL`, porque los endpoints de `ApiService` ya
-incluyen ese prefijo (por ejemplo `api/auth/login`).
+Las peticiones `api/*` pasan por el proxy de nginx hacia el backend en el
+puerto `8081`. No agregar `/api/` a `BASE_URL`, porque los endpoints de
+`ApiService` ya incluyen ese prefijo (por ejemplo `api/auth/login`).
 
 La app guarda el JWT en DataStore y un interceptor de OkHttp lo envía como
 `Authorization: Bearer <token>` en todas las peticiones. Sin esa cabecera, los

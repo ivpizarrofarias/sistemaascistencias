@@ -59,13 +59,14 @@ entrada registrada y el siguiente paso indicado por la app.*
 
 ### Software
 
-| Componente | Versión / detalle |
-|------------|-------------------|
-| JDK | 17 (usado por backend y Android) |
+| Componente | Versión / detalle (verificada en este entorno) |
+|------------|------------------------------------------------|
+| JDK | Java 17.0.15 LTS (usado por backend y Android) |
 | Backend | Maven Wrapper incluido (`backend/mvnw`), Spring Boot 4.0.8 |
-| Base de datos | MySQL 8 (esquema `sistema_asis`); H2 para los tests |
-| Frontend | Node.js 18+ y npm 10+ (Angular CLI 21) |
+| Base de datos | MySQL 8.4.11 local / 8.4.13 en el servidor (esquema `sistema_asis`); H2 para los tests |
+| Frontend | Node.js 22.23.4 y npm 10.9.9 (Angular CLI 21.2.24) |
 | Android | Android Studio LadyBug o superior, Android SDK 35, JDK 17 |
+| Gradle | 8.9 (wrapper incluido), AGP 8.5.2, Kotlin 2.0.20 |
 | Dispositivo Android | Emulador con API 24+ o dispositivo físico con `minSdk 24` |
 | Navegador | Chrome/Edge/Firefox moderno para el frontend |
 
@@ -74,10 +75,13 @@ entrada registrada y el siguiente paso indicado por la app.*
 - Backend: `http://localhost:8080`
 - Frontend: `http://localhost:4200` (proxy `/api` al backend)
 - MySQL: `localhost:3306`
-- Producción Docker: `http://100.73.41.33:8081` (proxy `/api` al backend)
-- Emulador Android → backend del host: `http://10.0.2.2:8080/`
+- **Android (configuración por defecto en el repo): `http://10.0.2.2:8080/`**
+  (el emulador ve el `localhost` del host con esa IP).
 - Dispositivo físico → backend del host: usar la IP de la red local
-  (p. ej. `http://192.168.1.10:8080/`)
+  (p. ej. `http://192.168.1.10:8080/`).
+- Despliegue Docker en servidor propio: `http://100.73.41.33:8081` (proxy `/api`
+  al backend). Para apuntar la app Android ahí, cambiar `BASE_URL` en
+  `RetrofitClient.kt` (ver [sección Android](#3-app-android-marcaje)).
 - Usuario inicial: `admin` / `admin123`
 
 ### Recursos recomendados para desarrollo
@@ -92,9 +96,9 @@ entrada registrada y el siguiente paso indicado por la app.*
 
 | Capa | Tecnologías |
 |------|-------------|
-| Backend | Java 17, Spring Boot 4.0.8 (Web MVC, Data JPA, Validation, Security), Spring Security 7 + JWT (`jjwt` 0.12.6), BCrypt, Hibernate 7.2, MySQL 8 / H2 (tests), HikariCP, OpenPDF 1.3.30, Lombok, Maven |
-| Frontend | Angular 21 (standalone components, signals, zoneless), Angular Material 21 (M3), TypeScript 5.9, RxJS 7.8, Chart.js 4.5 + ng2-charts 10, SweetAlert2, SCSS, Angular CLI/npm, Vitest |
-| Android | Kotlin 2.0.20, Jetpack Compose (Material 3, BOM 2024.09.03), ViewModel + StateFlow, Retrofit + OkHttp + Gson, DataStore, Gradle 8.9 / AGP 8.5.2 (`minSdk 24`, `targetSdk 35`) |
+| Backend | Java 17.0.15, Spring Boot 4.0.8 (Web MVC, Data JPA, Validation, Security), Spring Security + JWT (`jjwt` 0.12.6), BCrypt, Hibernate, MySQL 8.4 / H2 (tests), HikariCP, OpenPDF 1.3.30, Lombok, Maven |
+| Frontend | Angular 21.2.x (standalone components, signals, zoneless), Angular Material 21.2.x (M3), TypeScript 5.9, RxJS 7.8, Chart.js 4.5 + ng2-charts 10, SweetAlert2 11, SCSS, Angular CLI 21.2.24 / npm 10.9.9, Vitest 4 |
+| Android | Kotlin 2.0.20, Jetpack Compose (Material 3, BOM 2024.09.03), ViewModel + StateFlow, Retrofit 2.11 + OkHttp 4.12 + Gson 2.11, DataStore 1.1.1, JWT en cabecera `Authorization`, Gradle 8.9 / AGP 8.5.2 (`minSdk 24`, `targetSdk 35`) |
 | Entorno | API REST JSON sobre HTTP, autenticación JWT stateless, CORS para desarrollo local, perfiles H2 para pruebas |
 
 El detalle de requisitos funcionales, no funcionales y alcance está en
@@ -102,6 +106,53 @@ El detalle de requisitos funcionales, no funcionales y alcance está en
 
 Para subir la aplicación a un servidor propio con Docker, ver
 [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md).
+
+---
+
+## Qué hace y qué NO hace el sistema
+
+### ✅ Lo que hace
+
+| Área | Funcionalidad implementada |
+|------|----------------------------|
+| Autenticación | Login con usuario/contraseña, JWT stateless, BCrypt, roles `ADMIN`, `SUPERVISOR` y `EMPLOYEE`, cambio de contraseña y avatar. |
+| Usuarios | Alta/edición de usuarios del sistema, habilitar/deshabilitar, foto y perfil. |
+| Empleados | CRUD completo (RUT, datos laborales, sueldo base, AFP/salud, cargas), validación de RUT, alta/baja/eliminación. |
+| Horarios | Horarios semanales por empleado con días y colaciones, autoformato de horas (`0730` → `07:30`) y descarga de PDF. |
+| Asistencia | Marcaje por código de 4 dígitos (entrada, colaciones, salida), consulta por empleado/rango, correcciones administrativas, ausencias y licencias médicas. |
+| Permisos | Solicitudes por horas o días, aprobación/rechazo y compensación/devolución. |
+| Remuneraciones | Licencias médicas, horas extra, anticipos y liquidación mensual con reglas chilenas (gratificación, asignación familiar, AFP/salud/cesantía, impuesto único, descuentos). |
+| Liquidaciones | Generación individual y masiva, detalle, marcar como pagada y PDF de una hoja con firma. |
+| Dashboard | KPIs y gráficos de asistencia del período por empleado. |
+| Web | Panel administrativo con Angular Material, rutas protegidas y proxy `/api`. |
+| Android | Kiosco de marcaje y portal del empleado con sesión JWT persistida y selector de empleado. |
+| Despliegue | Docker Compose (backend + nginx), proxy `/api`, CORS configurable y firewalls documentados. |
+
+### ❌ Lo que NO hace (fuera de alcance)
+
+- **No** conecta la app Android ni el frontend directamente a MySQL: ambos
+  consumen la API REST; solo el backend accede a la base de datos.
+- **No** reemplaza asesoría legal, tributaria, contable ni laboral: los cálculos
+  requieren validación normativa según la empresa.
+- **No** integra pagos bancarios, transferencias, Previred, SII ni sistemas RRHH
+  externos.
+- **No** incluye firma electrónica avanzada ni flujos documentales complejos más
+  allá de los PDF generados.
+- **No** implementa biometría, geolocalización, reconocimiento facial ni control
+  de dispositivo para el marcaje (es solo por código).
+- **No** tiene portal de autoservicio web para empleados: el autoservicio es el
+  portal Android (consulta y marcaje).
+- **No** soporta multiempresa/multitenencia ni internacionalización completa.
+- **No** envía notificaciones push, correo ni SMS; **no** funciona sin conexión
+  (no hay modo offline ni sincronización diferida).
+- **No** exporta a Excel: los reportes descargables son PDF.
+- **No** provee HTTPS, rate limiting, auditoría avanzada ni recuperación de
+  contraseña por correo sin configuración/implementación adicional.
+- **No** usa migraciones controladas: el esquema se actualiza con
+  `JPA_DDL_AUTO=update`, por lo que se recomienda respaldo antes de actualizar.
+
+> Para el detalle completo de requisitos y tecnologías, ver
+> [`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md).
 
 ---
 
@@ -217,19 +268,33 @@ El proyecto Android está en `android/` y se abre y compila desde
 3. Ejecutar sobre un emulador o dispositivo físico.
 
 La base URL de la API está en
-`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt`:
+`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt`.
+**El repo queda configurado para el entorno local**:
 
-- `http://10.0.2.2:8080/` → `localhost` de la máquina vista desde el **emulador**.
+```kotlin
+private const val BASE_URL = "http://10.0.2.2:8080/"
+```
+
+- `http://10.0.2.2:8080/` → `localhost` de la máquina vista desde el **emulador**
+  (valor por defecto; requiere backend en `localhost:8080`).
 - Para **dispositivo físico**, cambiar por la IP local de la máquina
   (p. ej. `http://192.168.1.10:8080/`).
-- Con el despliegue Docker en el servidor propio: `http://100.73.41.33:8081/`.
+- Para el **despliegue Docker en el servidor propio**, cambiar temporalmente por
+  `http://100.73.41.33:8081/` y recompilar el APK.
+
+No agregar `/api/` a `BASE_URL`: los endpoints de `ApiService` ya incluyen ese
+prefijo (por ejemplo `api/auth/login`).
 
 ### Funcionalidades de la app
 
-- **Kiosco**: marcaje público por RUT (entrada, colaciones y salida), con
-  indicación del siguiente paso del día.
-- **Portal del empleado**: consulta de su propia asistencia, permisos y
-  liquidaciones con la sesión JWT guardada en DataStore.
+- **Kiosco**: marcaje público por código de 4 dígitos (entrada, colaciones y
+  salida), con indicación del siguiente paso del día.
+- **Portal del empleado**: inicio de sesión y consulta de asistencias, permisos y
+  liquidaciones; la sesión JWT se guarda en DataStore y se restaura al reabrir.
+- **Selector de empleado**: los usuarios sin `employee_id` (por ejemplo `admin`)
+  pueden elegir de qué empleado consultar los datos.
+- **Red**: un interceptor de OkHttp envía `Authorization: Bearer <token>` en las
+  peticiones; sin esa cabecera los endpoints de consulta responden 401.
 
 ### Notas técnicas Android
 
@@ -238,13 +303,16 @@ La base URL de la API está en
   debe usarse HTTPS.
 - Se incluye el wrapper `gradlew` y `gradle/wrapper/gradle-wrapper.properties`
   (Gradle 8.9).
+- La app no se conecta a MySQL directamente: consume la API REST del backend.
 
 ---
 
 ## Contratos de la API consumidos por el frontend/Android
 
 - `POST /api/auth/login` — iniciar sesión.
-- `POST /api/attendance/mark` (público) — marcar el siguiente paso por RUT.
+- `GET /api/employees` — listado de empleados (ADMIN/SUPERVISOR; lo usa el
+  selector de la app Android).
+- `POST /api/attendance/mark` (público) — marcar el siguiente paso por código.
 - `POST /api/attendance/status` (público) — consultar estado del día.
 - `GET /api/attendance/employee/{id}` — asistencias de un empleado.
 - `GET /api/permisos/employee/{id}` — permisos de un empleado.
