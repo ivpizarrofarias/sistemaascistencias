@@ -123,9 +123,8 @@ Acceso web:
 http://localhost:8081
 ```
 
-Si se cambió `HTTP_PORT`, usar `http://localhost:HTTP_PORT`. El usuario inicial
-por defecto es `admin` / `admin123`, pero debe cambiarse en `.env` antes de
-exponer el sistema.
+Si se cambió `HTTP_PORT`, usar `http://localhost:HTTP_PORT`. Las credenciales
+del administrador se definen en `.env` con `ADMIN_USERNAME` y `ADMIN_PASSWORD`.
 
 ## 4. App Android
 

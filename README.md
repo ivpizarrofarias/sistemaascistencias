@@ -12,11 +12,6 @@ El proyecto tiene tres partes:
 | `frontend/`| Aplicación web (Angular 21 + Angular Material)        |
 | `android/` | App Android de marcaje (Kotlin + Jetpack Compose)       |
 
----
-Usuario del sistema es admin
-Contraseña admin123
----
-
 ## Capturas del sistema
 
 ### Frontend (web)
@@ -81,7 +76,6 @@ entrada registrada y el siguiente paso indicado por la app.*
 - Dispositivo físico → backend del host: usar la IP de la red local
   (p. ej. `http://192.168.1.10:8080/`).
 - Con Docker Compose: `http://localhost:8081` (proxy `/api` al backend).
-- Usuario inicial: `admin` / `admin123`
 
 ### Recursos recomendados para desarrollo
 
@@ -179,7 +173,9 @@ Para ejecutar la aplicación con Docker Compose, ver
    ```
    El servidor queda en `http://localhost:8080`.
 
-   Usuario admin por defecto: `admin` / `admin123`.
+   Las credenciales del administrador se definen en `.env` mediante
+   `ADMIN_USERNAME` y `ADMIN_PASSWORD` (ver
+   [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md)).
 
 5. Ejecutar los tests (85 tests de unidad e integración, usan H2):
    ```bash
