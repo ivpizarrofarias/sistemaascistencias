@@ -37,8 +37,9 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 
 ### Docker
 - Docker Engine con plugin `docker compose` (o Docker Desktop).
-- `docker-compose.yml`: backend + frontend, `HTTP_PORT` configurable y
-  `host.docker.internal:host-gateway` para alcanzar MySQL en el host.
+- `docker-compose.yml`: servicios `mysql:8.4`, backend y frontend; puertos
+  configurables (`MYSQL_HOST_PORT`, `BACKEND_PORT`, `HTTP_PORT`) y volumen
+  persistente `mysql_data`.
 - `backend/Dockerfile`: multi-stage `maven:3.9-eclipse-temurin-17` →
   `eclipse-temurin:17-jre-jammy`, JAR en `/app/app.jar`, usuario no root.
 - `frontend/Dockerfile`: multi-stage `node:20-alpine` → `nginx:1.27-alpine`,
@@ -48,7 +49,7 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 - Guía completa: `docs/DESPLIEGUE_DOCKER.md`.
 
 ### Infraestructura/entorno
-- **Docker Engine + Docker Compose** para levantar backend y frontend en contenedores
+- **Docker Engine + Docker Compose** para levantar MySQL, backend y frontend en contenedores
 - API por defecto en `http://localhost:8080`
 - Frontend dev en `http://localhost:4200` con proxy a `/api`
 - Android emulador usa `http://10.0.2.2:8080/` para acceder al backend local

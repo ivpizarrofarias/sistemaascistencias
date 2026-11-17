@@ -64,13 +64,15 @@ entrada registrada y el siguiente paso indicado por la app.*
 | Gradle | 8.9 (wrapper incluido), AGP 8.5.2, Kotlin 2.0.20 |
 | Dispositivo Android | Emulador con API 24+ o dispositivo físico con `minSdk 24` |
 | Navegador | Chrome/Edge/Firefox moderno para el frontend |
-| Docker | Docker Engine con plugin `compose` (o Docker Desktop); opcional, para ejecutar backend + frontend en contenedores |
+| Docker | Docker Engine con plugin `compose` (o Docker Desktop) para ejecutar MySQL + backend + frontend en contenedores |
 
 ### Puertos y acceso
 
 - Backend: `http://localhost:8080`
 - Frontend: `http://localhost:4200` (proxy `/api` al backend)
-- MySQL: `localhost:3306`
+- MySQL del sistema: `localhost:3306`
+- MySQL en Docker Compose: `localhost:3307` (o `MYSQL_HOST_PORT`)
+- Backend expuesto por Compose: `http://localhost:8080` (o `BACKEND_PORT`)
 - **Android (configuración por defecto en el repo): `http://10.0.2.2:8080/`**
   (el emulador ve el `localhost` del host con esa IP).
 - Dispositivo físico → backend del host: usar la IP de la red local
@@ -92,8 +94,8 @@ entrada registrada y el siguiente paso indicado por la app.*
 | Backend | Java 17.0.15, Spring Boot 4.0.8 (Web MVC, Data JPA, Validation, Security), Spring Security + JWT (`jjwt` 0.12.6), BCrypt, Hibernate, MySQL 8.4 / H2 (tests), HikariCP, OpenPDF 1.3.30, Lombok, Maven |
 | Frontend | Angular 21.2.x (standalone components, signals, zoneless), Angular Material 21.2.x (M3), TypeScript 5.9, RxJS 7.8, Chart.js 4.5 + ng2-charts 10, SweetAlert2 11, SCSS, Angular CLI 21.2.24 / npm 10.9.9, Vitest 4 |
 | Android | Kotlin 2.0.20, Jetpack Compose (Material 3, BOM 2024.09.03), ViewModel + StateFlow, Retrofit 2.11 + OkHttp 4.12 + Gson 2.11, DataStore 1.1.1, JWT en cabecera `Authorization`, Gradle 8.9 / AGP 8.5.2 (`minSdk 24`, `targetSdk 35`) |
-| Docker | Docker Engine + plugin `compose`, `docker-compose.yml`, `backend/Dockerfile` (multi-stage `maven:3.9-eclipse-temurin-17` → `eclipse-temurin:17-jre-jammy`), `frontend/Dockerfile` (multi-stage `node:20-alpine` → `nginx:1.27-alpine`), `frontend/nginx.conf` (proxy `/api`), `scripts/deploy.sh` |
-| Entorno | MySQL externo a los contenedores, API REST JSON sobre HTTP, autenticación JWT stateless, CORS local, perfiles H2 para pruebas |
+| Docker | Docker Engine + plugin `compose`, `docker-compose.yml` con servicios `mysql:8.4`, backend y frontend, `backend/Dockerfile` (multi-stage `maven:3.9-eclipse-temurin-17` → `eclipse-temurin:17-jre-jammy`), `frontend/Dockerfile` (multi-stage `node:20-alpine` → `nginx:1.27-alpine`), `frontend/nginx.conf` (proxy `/api`), `scripts/deploy.sh` |
+| Entorno | MySQL 8.4 en contenedor con volumen persistente, API REST JSON sobre HTTP, autenticación JWT stateless, CORS local, perfiles H2 para pruebas |
 
 El detalle de requisitos funcionales, no funcionales y alcance está en
 [`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md).
@@ -120,7 +122,7 @@ Para ejecutar la aplicación con Docker Compose, ver
 | Dashboard | KPIs y gráficos de asistencia del período por empleado. |
 | Web | Panel administrativo con Angular Material, rutas protegidas y proxy `/api`. |
 | Android | Kiosco de marcaje y portal del empleado con sesión JWT persistida y selector de empleado. |
-| Despliegue | Docker Compose (backend + nginx), proxy `/api`, CORS configurable y firewalls documentados. |
+| Despliegue | Docker Compose (MySQL + backend + nginx), proxy `/api`, CORS configurable y volumen persistente para la BD. |
 
 ### ❌ Lo que NO hace (fuera de alcance)
 
@@ -152,8 +154,10 @@ Para ejecutar la aplicación con Docker Compose, ver
 
 ## 1. Backend (API REST)
 
-1. Crear la base de datos en MySQL. La configuración por defecto apunta a la
-   base local (`localhost:3306/sistema_asis`, usuario `dev`):
+1. Crear la base de datos en MySQL si ejecutas el backend fuera de Docker. La
+   configuración por defecto apunta a `localhost:3306/sistema_asis` (usuario
+   `dev`). Con Docker Compose no hay que crearla: el servicio `mysql` la crea
+   automáticamente con `MYSQL_DATABASE`.
    ```sql
    CREATE DATABASE sistema_asis;
    ```
@@ -239,6 +243,9 @@ Angular CLI está configurado con proxy `/api` → `http://localhost:8080`
 ```bash
 npm run build       # salida en dist/sistema-asistencias
 ```
+
+Con Docker Compose no hace falta instalar Node: el frontend se compila dentro
+del contenedor y nginx lo sirve en `http://localhost:8081`.
 
 Incluye un **dashboard** con KPIs y gráficos de asistencia del personal, y
 paneles de administración: empleados, horarios semanales (con descarga de PDF),

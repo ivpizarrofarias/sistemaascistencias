@@ -15,8 +15,8 @@ if [[ ! -f .env ]]; then
     exit 1
 fi
 
-if grep -Eq 'cambiar_password_mysql|cambiar_este_valor|cambiar_password_admin' .env; then
-    echo "Hay valores pendientes de reemplazar en .env (DB_PASSWORD, JWT_SECRET o ADMIN_PASSWORD)." >&2
+if grep -Eq 'cambiar_password_root_mysql|cambiar_password_mysql|cambiar_este_valor|cambiar_password_admin' .env; then
+    echo "Hay valores pendientes de reemplazar en .env (MySQL, JWT_SECRET o ADMIN_PASSWORD)." >&2
     exit 1
 fi
 
