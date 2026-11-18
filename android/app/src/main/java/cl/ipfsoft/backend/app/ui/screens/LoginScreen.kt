@@ -42,7 +42,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import cl.ipfsoft.backend.app.data.BackendEnvironment
 import cl.ipfsoft.backend.app.ui.UiState
 
 /** Pantalla de inicio de sesión para el portal del empleado. */
@@ -51,7 +50,6 @@ fun LoginScreen(
     state: UiState,
     onLogin: (String, String) -> Unit,
     onBack: () -> Unit,
-    onSelectEnvironment: (BackendEnvironment) -> Unit,
 ) {
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -108,18 +106,6 @@ fun LoginScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
                 ) {
                     Column(Modifier.padding(22.dp)) {
-                        Text(
-                            "Entorno del backend",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = colors.onSurfaceVariant
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        EnvironmentSelector(
-                            current = state.environment,
-                            onSelect = onSelectEnvironment,
-                        )
-                        Spacer(Modifier.height(18.dp))
-
                         state.error?.let {
                             Box(
                                 modifier = Modifier

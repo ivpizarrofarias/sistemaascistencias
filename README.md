@@ -1,330 +1,455 @@
 # Sistema de Asistencias y Liquidaciones (Chile)
 
-Sistema completo de gestión de asistencia y liquidaciones de sueldos, con lógica
-de legislación laboral chilena (jornadas con colación, permisos por hora/día,
-compensación, asignación familiar, AFP/salud/cesantía, impuesto único).
+Aplicación integral para gestionar **asistencia, horarios, permisos laborales y
+remuneraciones** de una empresa chilena. El backend implementa las reglas de
+jornada con colación, licencias médicas, horas extra, anticipos, gratificación,
+asignación familiar, AFP/salud/cesantía e impuesto único, y genera liquidaciones
+y horarios en PDF.
 
-El proyecto tiene tres partes:
+El proyecto está dividido en tres módulos que se comunican por una **API REST**:
 
-| Carpeta    | Descripción                                             |
-|------------|---------------------------------------------------------|
-| `backend/` | API REST (Spring Boot 4.0.8, Java 17, MySQL por defecto) |
-| `frontend/`| Aplicación web (Angular 21 + Angular Material)        |
-| `android/` | App Android de marcaje (Kotlin + Jetpack Compose)       |
+| Módulo | Tecnología principal | Responsabilidad |
+|--------|----------------------|-----------------|
+| `backend/` | Java 17 + Spring Boot | API REST, reglas de negocio, seguridad y persistencia |
+| `frontend/` | Angular 21 + Angular Material | Panel web de administración y consulta |
+| `android/` | Kotlin + Jetpack Compose | Kiosco de marcaje y portal del empleado |
+
+> Los clientes (web y Android) **nunca acceden a la base de datos directamente**:
+> solo consumen la API. Las credenciales y parámetros sensibles se entregan
+> mediante variables de entorno y archivos locales no versionados; este
+> documento no incluye valores de conexión, usuarios ni claves.
+
+---
+
+## Índice
+
+1. [Capturas del sistema](#capturas-del-sistema)
+2. [Arquitectura general](#arquitectura-general)
+3. [Requisitos funcionales](#requisitos-funcionales)
+4. [Requisitos no funcionales y seguridad](#requisitos-no-funcionales-y-seguridad)
+5. [Qué hace y qué NO hace el sistema](#qué-hace-y-qué-no-hace-el-sistema)
+6. [Tecnologías utilizadas](#tecnologías-utilizadas)
+7. [Estructura del repositorio](#estructura-del-repositorio)
+8. [Puesta en marcha con Docker Compose](#puesta-en-marcha-con-docker-compose)
+9. [Desarrollo de cada módulo](#desarrollo-de-cada-módulo)
+10. [Contratos de la API](#contratos-de-la-api)
+11. [Dominio y reglas de negocio](#dominio-y-reglas-de-negocio)
+12. [Documentación adicional](#documentación-adicional)
+
+---
 
 ## Capturas del sistema
 
-### Frontend (web)
+### Panel web
 
 | Inicio de sesión | Dashboard (KPIs y gráficos) |
 |------------------|-----------------------------|
-| ![Login del sistema](docs/imagenes/capturas/frontend-login.png) | ![Dashboard](docs/imagenes/capturas/frontend-dashboard.png) |
+| ![Inicio de sesión](docs/imagenes/capturas/frontend-login.png) | ![Dashboard](docs/imagenes/capturas/frontend-dashboard.png) |
 
-| Empleados | Control de asistencia |
-|-----------|-----------------------|
-| ![Administración de empleados](docs/imagenes/capturas/frontend-empleados.png) | ![Control de asistencia](docs/imagenes/capturas/frontend-asistencias.png) |
+| Administración de empleados | Control de asistencia |
+|-----------------------------|-----------------------|
+| ![Empleados](docs/imagenes/capturas/frontend-empleados.png) | ![Asistencia](docs/imagenes/capturas/frontend-asistencias.png) |
 
-![Remuneraciones y liquidaciones](docs/imagenes/capturas/frontend-remuneraciones.png)
+**Remuneraciones y liquidaciones** del período, con horas extra, anticipos y
+licencias:
 
-*Remuneraciones: liquidaciones del período, horas extra, anticipos y licencias.*
+![Remuneraciones](docs/imagenes/capturas/frontend-remuneraciones.png)
 
-### App Android
+### Aplicación Android
 
 | Kiosco de marcaje | Código ingresado |
 |-------------------|------------------|
-| ![Kiosco de marcaje de asistencia en Android](docs/imagenes/capturas/android-kiosco.png) | ![Kiosco con código de marcaje](docs/imagenes/capturas/android-kiosco-codigo.png) |
+| ![Kiosco](docs/imagenes/capturas/android-kiosco.png) | ![Código ingresado](docs/imagenes/capturas/android-kiosco-codigo.png) |
 
-*Kiosco de marcaje: el trabajador ingresa su código de 4 dígitos y la app registra
-la siguiente marca del día (entrada, colaciones o salida).*
+![Marcaje con un empleado real](docs/imagenes/capturas/android-marcaje-empleado-real.png)
 
-![Marcaje con empleado real](docs/imagenes/capturas/android-marcaje-empleado-real.png)
-
-*Marcaje con un empleado real: María José González Rojas (código 6977), con la
-entrada registrada y el siguiente paso indicado por la app.*
+El flujo del kiosco es simple: la persona ingresa su código de marcaje y la
+app registra el siguiente paso del día, mostrando la hora y la acción pendiente.
 
 ### Diagramas
 
-- [Arquitectura general](docs/imagenes/arquitectura.svg) ·
-  [Módulos y funcionalidades](docs/imagenes/modulos.svg) ·
-  [Flujo de marcaje](docs/imagenes/flujo-marcaje.svg)
+**Arquitectura general**
+
+![Arquitectura general](docs/imagenes/arquitectura.svg)
+
+**Módulos y funcionalidades**
+
+![Módulos y funcionalidades](docs/imagenes/modulos.svg)
+
+**Flujo de marcaje de asistencia**
+
+![Flujo de marcaje](docs/imagenes/flujo-marcaje.svg)
 
 ---
 
-## Requisitos del sistema
+## Arquitectura general
 
-### Software
+```
+Navegador / App Android
+        │  HTTP + JSON
+        ▼
+   API REST (Spring Boot)
+        │  JPA / Hibernate
+        ▼
+   Motor de base de datos (contenedor del stack local)
+```
 
-| Componente | Versión / detalle (verificada en este entorno) |
-|------------|------------------------------------------------|
-| JDK | Java 17.0.15 LTS (usado por backend y Android) |
-| Backend | Maven Wrapper incluido (`backend/mvnw`), Spring Boot 4.0.8 |
-| Base de datos | MySQL 8.4.11 local / 8.4.13 en el servidor (esquema `sistema_asis`); H2 para los tests |
-| Frontend | Node.js 22.23.4 y npm 10.9.9 (Angular CLI 21.2.24) |
-| Android | Android Studio LadyBug o superior, Android SDK 35, JDK 17 |
-| Gradle | 8.9 (wrapper incluido), AGP 8.5.2, Kotlin 2.0.20 |
-| Dispositivo Android | Emulador con API 24+ o dispositivo físico con `minSdk 24` |
-| Navegador | Chrome/Edge/Firefox moderno para el frontend |
-| Docker | Docker Engine con plugin `compose` (o Docker Desktop) para ejecutar MySQL + backend + frontend en contenedores |
-
-### Puertos y acceso
-
-- Backend: `http://localhost:8080`
-- Frontend: `http://localhost:4200` (proxy `/api` al backend)
-- MySQL del sistema: `localhost:3306`
-- MySQL en Docker Compose: `localhost:3307` (o `MYSQL_HOST_PORT`)
-- Backend expuesto por Compose: `http://localhost:8080` (o `BACKEND_PORT`)
-- **Android**: selector en la app entre backend **Local** (`http://10.0.2.2:8080/`
-  en el emulador) y **Producción** (URL configurada solo en `android/local.properties`).
-- Dispositivo físico → backend del host: usar la IP de la red local
-  (p. ej. `http://192.168.1.10:8080/`).
-- Con Docker Compose: `http://localhost:8081` (proxy `/api` al backend).
-
-### Recursos recomendados para desarrollo
-
-- 4 núcleos de CPU, 8 GB de RAM y ~10 GB libres
-  (SDK de Android + emulador + dependencias).
-- Conexión a red local para probar el marcaje desde un dispositivo físico.
+- El **frontend** se sirve con nginx y reenvía `/api/*` al backend dentro de la
+  red de contenedores.
+- La **app Android** consume la API del backend local; no tiene acceso a la base
+  de datos.
+- El **backend** es el único componente que habla con la base de datos y el
+  único que firma y valida los tokens JWT.
+- La configuración sensible se inyecta desde `.env` (ignorado por Git) al
+  contenedor del backend; el repositorio solo contiene plantillas con
+  marcadores de posición.
 
 ---
 
-## Tecnologías utilizadas
+## Requisitos funcionales
 
-| Capa | Tecnologías |
-|------|-------------|
-| Backend | Java 17.0.15, Spring Boot 4.0.8 (Web MVC, Data JPA, Validation, Security), Spring Security + JWT (`jjwt` 0.12.6), BCrypt, Hibernate, MySQL 8.4 / H2 (tests), HikariCP, OpenPDF 1.3.30, Lombok, Maven |
-| Frontend | Angular 21.2.x (standalone components, signals, zoneless), Angular Material 21.2.x (M3), TypeScript 5.9, RxJS 7.8, Chart.js 4.5 + ng2-charts 10, SweetAlert2 11, SCSS, Angular CLI 21.2.24 / npm 10.9.9, Vitest 4 |
-| Android | Kotlin 2.0.20, Jetpack Compose (Material 3, BOM 2024.09.03), ViewModel + StateFlow, Retrofit 2.11 + OkHttp 4.12 + Gson 2.11, DataStore 1.1.1, JWT en cabecera `Authorization`, Gradle 8.9 / AGP 8.5.2 (`minSdk 24`, `targetSdk 35`) |
-| Docker | Docker Engine + plugin `compose`, `docker-compose.yml` con servicios `mysql:8.4`, backend y frontend, `backend/Dockerfile` (multi-stage `maven:3.9-eclipse-temurin-17` → `eclipse-temurin:17-jre-jammy`), `frontend/Dockerfile` (multi-stage `node:20-alpine` → `nginx:1.27-alpine`), `frontend/nginx.conf` (proxy `/api`), `scripts/deploy.sh` |
-| Entorno | MySQL 8.4 en contenedor con volumen persistente, API REST JSON sobre HTTP, autenticación JWT stateless, CORS local, perfiles H2 para pruebas |
+### 1. Autenticación y usuarios del sistema
 
-El detalle de requisitos funcionales, no funcionales y alcance está en
-[`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md).
+- Inicio de sesión con usuario y contraseña; emisión de token JWT *stateless*.
+- Contraseñas almacenadas con hash BCrypt.
+- Roles: **ADMIN**, **SUPERVISOR** y **EMPLOYEE**, con control de acceso en los
+  endpoints mediante anotaciones de seguridad.
+- Perfil: actualización de nombre, nombre completo, foto (avatar) y contraseña.
+- Gestión de cuentas internas según permisos: alta, edición, habilitación y
+  deshabilitación.
 
-Para ejecutar la aplicación con Docker Compose, ver
-[`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md).
+### 2. Empleados
+
+- Alta, edición, consulta, baja, habilitación/deshabilitación y eliminación.
+- Datos personales y laborales: RUT, fecha de ingreso, sueldo base, AFP, salud,
+  cargas familiares y datos de contacto.
+- Validación de RUT al crear o editar.
+- Listado consultable por el panel web y por la app Android (según rol).
+
+### 3. Horarios semanales
+
+- Horario por empleado y por día, con jornadas y períodos de colación.
+- Autoformato de horas al ingresar (por ejemplo, `0730` se muestra como `07:30`).
+- Alta, edición, eliminación y descarga del horario en PDF.
+
+### 4. Asistencia y marcaje
+
+- Kiosco público de marcaje por código de 4 dígitos: registra entrada, salidas
+  a colación, reingresos y salida final, indicando siempre el siguiente paso.
+- Consulta del estado del día sin registrar marca.
+- Consulta de asistencias por empleado y rango de fechas.
+- Correcciones administrativas: completar, ajustar y desbloquear registros.
+- Registro de ausencias y visualización de licencias médicas.
+
+### 5. Permisos laborales
+
+- Solicitudes por horas o por días, con motivo y fecha.
+- Aprobación, rechazo y compensación/devolución de tiempo.
+- Consulta por empleado y listado general según el rol.
+
+### 6. Licencias médicas, horas extra y anticipos
+
+- Registro de licencias médicas por empleado y período.
+- Registro de horas extra por fecha.
+- Registro de anticipos de sueldo con reglas de negocio por período.
+
+### 7. Remuneraciones y liquidaciones
+
+- Generación y recálculo de la liquidación mensual por empleado.
+- Generación masiva del período.
+- Cálculo de haberes y descuentos según normativa chilena: sueldo base,
+  gratificación, asignación familiar por tramos y cargas, AFP, salud, cesantía,
+  impuesto único, descuentos por inasistencias, licencias, permisos y anticipos,
+  y horas extra.
+- Detalle de liquidación, marcar como pagada y descarga en PDF de una hoja con
+  bloque de firma.
+
+### 8. Dashboard y reportes
+
+- Indicadores y gráficos de asistencia del período por empleado.
+- Paneles de administración para empleados, horarios, asistencia, permisos y
+  remuneraciones.
+
+### 9. Aplicación Android
+
+- Kiosco de marcaje con pantalla siempre activa durante el uso.
+- Portal del empleado: inicio de sesión y consulta de asistencias, permisos y
+  liquidaciones.
+- Sesión JWT persistida localmente y restaurada al reabrir la app.
+- Selector de empleado para cuentas que no tienen un empleado asociado.
+- Conexión **únicamente al backend local** del proyecto; nunca a otro servidor
+  ni a la base de datos de forma directa.
+
+---
+
+## Requisitos no funcionales y seguridad
+
+| Requisito | Implementación |
+|-----------|----------------|
+| Autenticación | JWT stateless y autorización por roles |
+| Contraseñas | Hash BCrypt; nunca se guardan en texto plano |
+| Validación | Bean Validation en la API y reglas de negocio en servicios |
+| Persistencia | JPA con consultas parametrizadas, sin SQL dinámico concatenado |
+| Errores | Manejo centralizado con respuestas uniformes |
+| Secretos | Variables de entorno y archivos ignorados por Git; plantillas sin valores reales |
+| Red | CORS configurable para los orígenes de desarrollo local |
+| Pruebas | Tests de unidad e integración con base de datos en memoria |
+| Contenedores | Imágenes multi-etapa, usuario no root en el backend y volumen persistente para los datos |
+| Disponibilidad | Healthchecks y arranque ordenado de los servicios del stack |
 
 ---
 
 ## Qué hace y qué NO hace el sistema
 
-### ✅ Lo que hace
+### Lo que hace
 
 | Área | Funcionalidad implementada |
 |------|----------------------------|
-| Autenticación | Login con usuario/contraseña, JWT stateless, BCrypt, roles `ADMIN`, `SUPERVISOR` y `EMPLOYEE`, cambio de contraseña y avatar. |
-| Usuarios | Alta/edición de usuarios del sistema, habilitar/deshabilitar, foto y perfil. |
-| Empleados | CRUD completo (RUT, datos laborales, sueldo base, AFP/salud, cargas), validación de RUT, alta/baja/eliminación. |
-| Horarios | Horarios semanales por empleado con días y colaciones, autoformato de horas (`0730` → `07:30`) y descarga de PDF. |
-| Asistencia | Marcaje por código de 4 dígitos (entrada, colaciones, salida), consulta por empleado/rango, correcciones administrativas, ausencias y licencias médicas. |
-| Permisos | Solicitudes por horas o días, aprobación/rechazo y compensación/devolución. |
-| Remuneraciones | Licencias médicas, horas extra, anticipos y liquidación mensual con reglas chilenas (gratificación, asignación familiar, AFP/salud/cesantía, impuesto único, descuentos). |
-| Liquidaciones | Generación individual y masiva, detalle, marcar como pagada y PDF de una hoja con firma. |
-| Dashboard | KPIs y gráficos de asistencia del período por empleado. |
-| Web | Panel administrativo con Angular Material, rutas protegidas y proxy `/api`. |
-| Android | Kiosco de marcaje y portal del empleado con sesión JWT persistida y selector de empleado. |
-| Despliegue | Docker Compose (MySQL + backend + nginx), proxy `/api`, CORS configurable y volumen persistente para la BD. |
+| Autenticación | Login, JWT, BCrypt, roles y cambio de contraseña/avatar |
+| Usuarios | Alta/edición de cuentas internas, habilitar/deshabilitar |
+| Empleados | CRUD completo, validación de RUT, alta/baja/eliminación |
+| Horarios | Horarios semanales con colaciones, autoformato y PDF |
+| Asistencia | Marcaje por código, consultas, correcciones, ausencias y licencias |
+| Permisos | Solicitudes por hora/día, aprobación, rechazo y compensación |
+| Remuneraciones | Licencias, horas extra, anticipos y liquidación mensual con reglas chilenas |
+| Liquidaciones | Generación individual y masiva, detalle, pago y PDF |
+| Dashboard | KPIs y gráficos de asistencia del período |
+| Web | Panel Angular Material con rutas protegidas y proxy `/api` |
+| Android | Kiosco y portal del empleado con JWT persistido y selector de empleado |
+| Despliegue | Stack local con contenedores, proxy `/api`, CORS configurable y volumen persistente |
 
-### ❌ Lo que NO hace (fuera de alcance)
+### Lo que NO hace (fuera de alcance)
 
-- **No** conecta la app Android ni el frontend directamente a MySQL: ambos
-  consumen la API REST; solo el backend accede a la base de datos.
-- **No** reemplaza asesoría legal, tributaria, contable ni laboral: los cálculos
+- **No** conecta el frontend ni la app Android a la base de datos: solo el
+  backend accede a ella.
+- **No** reemplaza asesoría legal, tributaria, contable ni laboral; los cálculos
   requieren validación normativa según la empresa.
-- **No** integra pagos bancarios, transferencias, Previred, SII ni sistemas RRHH
-  externos.
+- **No** integra pagos bancarios, Previred, SII ni sistemas RRHH externos.
 - **No** incluye firma electrónica avanzada ni flujos documentales complejos más
   allá de los PDF generados.
 - **No** implementa biometría, geolocalización, reconocimiento facial ni control
-  de dispositivo para el marcaje (es solo por código).
-- **No** tiene portal de autoservicio web para empleados: el autoservicio es el
-  portal Android (consulta y marcaje).
-- **No** soporta multiempresa/multitenencia ni internacionalización completa.
-- **No** envía notificaciones push, correo ni SMS; **no** funciona sin conexión
-  (no hay modo offline ni sincronización diferida).
+  de dispositivo para el marcaje: el marcaje es solo por código.
+- **No** tiene portal de autoservicio web para empleados; el autoservicio está
+  en la app Android.
+- **No** soporta multiempresa, multitenencia ni internacionalización completa.
+- **No** envía notificaciones push, correo ni SMS, y **no** funciona sin conexión.
 - **No** exporta a Excel: los reportes descargables son PDF.
-- **No** provee HTTPS, rate limiting, auditoría avanzada ni recuperación de
-  contraseña por correo sin configuración/implementación adicional.
-- **No** usa migraciones controladas: el esquema se actualiza con
-  `JPA_DDL_AUTO=update`, por lo que se recomienda respaldo antes de actualizar.
-
-> Para el detalle completo de requisitos y tecnologías, ver
-> [`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md).
+- **No** provee HTTPS, limitación de tasa, auditoría avanzada ni recuperación de
+  contraseña por correo sin trabajo adicional.
+- **No** usa migraciones controladas: el esquema se actualiza automáticamente,
+  por lo que se recomienda respaldo antes de actualizar.
 
 ---
 
-## 1. Backend (API REST)
+## Tecnologías utilizadas
 
-1. Crear la base de datos en MySQL si ejecutas el backend fuera de Docker. La
-   configuración por defecto apunta a `localhost:3306/sistema_asis` (usuario
-   `root`). Con Docker Compose no hay que crearla: el servicio `mysql` la crea
-   automáticamente con `MYSQL_DATABASE`.
-   ```sql
-   CREATE DATABASE sistema_asis;
-   ```
-2. La contraseña **no** se guarda en `application.properties`: se inyecta con la
-   variable `DB_PASSWORD` desde `.env` (ver
-   [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md)). Para desarrollo
-   local se pueden cargar las variables de `.env` antes de Maven con
-   `set -a && source ../.env && set +a`.
-3. Si ya tenías la base creada con los nombres de tabla en inglés, ejecuta
-   **una sola vez** el script de migración (con la aplicación detenida):
-   ```bash
-   mysql -uroot -p sistema_asis < migracion_nombres_espanol.sql
-   ```
-4. Ejecutar (desde `backend/`):
-   ```bash
-   ./mvnw spring-boot:run
-   ```
-   El servidor queda en `http://localhost:8080`.
+| Capa | Tecnologías y versiones |
+|------|-------------------------|
+| Backend | Java 17, Spring Boot 4.0.8 (Web MVC, Data JPA, Validation, Security), Spring Security + JWT, BCrypt, Hibernate, HikariCP, OpenPDF, Lombok, Maven Wrapper |
+| Base de datos | Motor MySQL 8.4 en contenedor con volumen persistente; H2 en memoria para pruebas |
+| Frontend | Angular 21.2 (componentes standalone, signals, zoneless), Angular Material 21 (M3), TypeScript 5.9, RxJS 7.8, Chart.js + ng2-charts, SweetAlert2, SCSS, Vitest |
+| Android | Kotlin 2.0.20, Jetpack Compose (Material 3), ViewModel + StateFlow, Retrofit + OkHttp + Gson, DataStore, Gradle 8.9 / AGP 8.5.2 (`minSdk 24`, `targetSdk 35`) |
+| Docker | Docker Engine con plugin `compose`, imágenes multi-etapa, nginx como proxy inverso, healthchecks |
+| Calidad | Tests automatizados del backend con perfil H2 y suite de tests del frontend |
 
-   Las credenciales del administrador se definen en `.env` mediante
-   `ADMIN_USERNAME` y `ADMIN_PASSWORD` (ver
-   [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md)).
-
-5. Ejecutar los tests (85 tests de unidad e integración, usan H2):
-   ```bash
-   ./mvnw test
-   ```
-
-### Modelo de datos
-
-Todas las entidades JPA y sus tablas están en español:
-
-| Entidad           | Tabla                     |
-|-------------------|---------------------------|
-| `Empleado`        | `empleados`               |
-| `Usuario`         | `usuarios`                |
-| `Asistencia`      | `asistencias`             |
-| `HorarioSemanal`  | `horarios_semanales`      |
-| `DiaHorario`      | `dias_horario_semanal`    |
-| `PermisoLaboral`  | `permisos_laborales`      |
-| `Liquidacion`     | `liquidaciones`           |
-| `LiquidacionDetalle` | `liquidacion_detalle`   |
-| `Anticipo`        | `anticipos`               |
-| `LicenciaMedica`  | `licencias_medicas`       |
-| `HoraExtra`       | `horas_extra`             |
-| `ParametroSistema`| `parametros_sistema`      |
-
-Los DTOs y los contratos JSON de la API conservan sus nombres en inglés
-(`EmployeeResponse`, `AttendanceResponse`, …) para no romper los clientes
-(frontend y app Android).
-
-### Reglas de negocio
-
-- **Licencias médicas**: el empleador no paga la licencia. Todos los días
-  solapados de una licencia se descuentan del sueldo del trabajador, por lo que
-  no existe un haber de subsidio patronal. Las columnas
-  `licencias_medicas.employer_pays` y
-  `liquidaciones.subsidio_licencia_empleador` se conservan en la base de datos
-  solo por compatibilidad (`migracion_sin_subsidio_licencia.sql` las deja con
-  default `0`), pero el código y la API ya no las utilizan.
-- **Control de asistencia**: la vista es maestro/detalle. Se listan todos los
-  empleados y, al seleccionar uno, se muestra su asistencia del período. No
-  existe un endpoint masivo: cada consulta va a
-  `GET /api/attendance/employee/{id}`.
-- **Liquidación de sueldo**: el anticipo del período se descuenta junto con el
-  resto de los descuentos y aparece como una línea normal
-  `Anticipo de sueldo — DESCUENTO`, sin una sección aparte.
+El inventario completo está en
+[`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md).
 
 ---
 
-## 2. Frontend (web)
+## Estructura del repositorio
 
-Desde `frontend/`:
+```
+.
+├── backend/            API REST, entidades, servicios, seguridad y PDF
+│   ├── Dockerfile      Build multi-etapa con Maven + JRE
+│   └── src/            Código fuente y tests
+├── frontend/           Panel web Angular
+│   ├── Dockerfile      Build multi-etapa con Node + nginx
+│   ├── nginx.conf      Proxy /api y fallback SPA
+│   └── src/            Componentes, servicios y rutas
+├── android/            App Android (Kotlin + Compose)
+│   └── local.properties  Configuración local no versionada
+├── docs/
+│   ├── imagenes/       Capturas y diagramas usados en este README
+│   ├── DESPLIEGUE_DOCKER.md
+│   └── REQUISITOS_Y_TECNOLOGIAS.md
+├── scripts/deploy.sh   Validación y arranque del stack
+├── docker-compose.yml  Servicios: base de datos, backend y frontend
+├── .env.example        Plantilla de variables de entorno (sin valores reales)
+└── README.md           Este documento
+```
+
+---
+
+## Puesta en marcha con Docker Compose
+
+### Requisitos previos
+
+- Docker Engine con el plugin `compose`, o Docker Desktop.
+- Los puertos definidos en las variables de entorno deben estar libres.
+- Git para obtener el código.
+
+### Configuración
+
+1. Copiar la plantilla y editarla:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   `.env` está ignorado por Git y es el único lugar donde se colocan los valores
+   reales. La plantilla contiene solo marcadores de posición.
+
+2. Revisar las variables. Ninguna de ellas debe escribirse en este README ni
+   en el código fuente:
+
+   | Variable | Uso |
+   |----------|-----|
+   | `HTTP_PORT`, `BACKEND_PORT`, `MYSQL_HOST_PORT` | Puertos publicados en la máquina |
+   | `MYSQL_DATABASE`, `MYSQL_ROOT_PASSWORD` | Inicialización del contenedor de base de datos |
+   | `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | Conexión del backend dentro de la red de contenedores |
+   | `JWT_SECRET`, `JWT_EXPIRATION_MS` | Firma y expiración de tokens |
+   | `ADMIN_USERNAME`, `ADMIN_PASSWORD` | Cuenta inicial del sistema |
+   | `COMPANY_NAME`, `COMPANY_RUT` | Datos que aparecen en PDF y liquidaciones |
+   | `CORS_ALLOWED_ORIGINS` | Orígenes HTTP permitidos |
+
+   El Compose ya define la URL interna hacia el servicio de base de datos, así
+   que no hace falta exponer valores de conexión en la documentación.
+
+### Arranque
 
 ```bash
+docker compose up -d --build
+```
+
+O, de forma resumida:
+
+```bash
+chmod +x scripts/deploy.sh
+./scripts/deploy.sh
+```
+
+Verificación:
+
+```bash
+docker compose ps
+docker compose logs -f backend
+docker compose logs -f frontend
+```
+
+El stack levanta tres servicios con orden de arranque y healthchecks: motor de
+base de datos, backend y frontend. El esquema se crea automáticamente y la
+aplicación queda disponible en la URL HTTP configurada en `HTTP_PORT`.
+
+> Después de cambiar `.env` hay que recrear los contenedores, porque un simple
+> `restart` no vuelve a leer el archivo:
+>
+> ```bash
+> docker compose up -d --force-recreate
+> ```
+
+La guía completa, incluyendo respaldos y solución de problemas, está en
+[`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md).
+
+---
+
+## Desarrollo de cada módulo
+
+### Backend
+
+```bash
+cd backend
+./mvnw spring-boot:run     # API en el puerto configurado
+./mvnw test                # Tests con base de datos en memoria
+```
+
+Para ejecutarlo fuera de contenedores, cargar primero las variables desde
+`.env` (sin mostrar ni copiar sus valores):
+
+```bash
+set -a && source ../.env && set +a
+```
+
+### Frontend
+
+```bash
+cd frontend
 npm install
-npm start           # http://localhost:4200
+npm start                  # servidor de desarrollo con proxy /api
+npm run build              # salida de producción
 ```
 
-Angular CLI está configurado con proxy `/api` → `http://localhost:8080`
-(`proxy.conf.json`), así que debe estar corriendo el backend. Para producción:
+El proxy de desarrollo reenvía `/api` al backend local, por lo que debe estar
+corriendo. Con Compose no hace falta instalar Node: el frontend se compila
+dentro del contenedor.
 
-```bash
-npm run build       # salida en dist/sistema-asistencias
-```
+### App Android
 
-Con Docker Compose no hace falta instalar Node: el frontend se compila dentro
-del contenedor y nginx lo sirve en `http://localhost:8081`.
-
-Incluye un **dashboard** con KPIs y gráficos de asistencia del personal, y
-paneles de administración: empleados, horarios semanales (con descarga de PDF),
-control de asistencia, permisos laborales y remuneraciones (liquidaciones,
-anticipos, licencias médicas y horas extra). El marcaje por RUT se hace desde la
-app Android.
-
-### Stack
-
-- Angular 21 (standalone components, signals, zoneless).
-- Angular Material 21 con tema M3 y `ng2-charts` + Chart.js para el dashboard.
-- Carga perezosa por ruta (`loadComponent`) y servicios con `HttpClient`.
+- Abrir `android/` con Android Studio o usar `./gradlew` con el SDK configurado.
+- La app apunta **solo al backend local**. La URL se inyecta en `BuildConfig`
+  desde `android/local.properties`, archivo ignorado por Git con un valor
+  predeterminado para el emulador.
+- Para probar en un dispositivo físico, sobrescribir `backend.local.url` en ese
+  archivo local con la dirección del backend en la red local.
+- No existe selección de otros entornos en la app: no hay código, configuración
+  ni referencia a ningún otro servidor.
+- La app envía el JWT como cabecera `Authorization: Bearer <token>` mediante un
+  interceptor de OkHttp; sin esa cabecera, los endpoints de consulta responden
+  `401`.
 
 ---
 
-## 3. App Android (marcaje)
+## Contratos de la API
 
-El proyecto Android está en `android/` y se abre y compila desde
-**Android Studio** (o con `./gradlew` si se cuenta con el SDK configurado):
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| `POST` | `/api/auth/login` | Inicio de sesión y emisión de JWT |
+| `GET` | `/api/employees` | Listado de empleados (según rol) |
+| `POST` | `/api/attendance/mark` | Registrar el siguiente marcaje por código |
+| `POST` | `/api/attendance/status` | Consultar el estado del día |
+| `GET` | `/api/attendance/employee/{id}` | Asistencias de un empleado |
+| `GET` | `/api/permisos/employee/{id}` | Permisos de un empleado |
+| `GET` | `/api/payroll/liquidaciones/employee/{employeeId}` | Liquidaciones de un empleado |
+| `GET` | `/api/payroll/liquidaciones/{id}/pdf` | PDF de una liquidación |
+| CRUD | Empleados, asistencia, permisos, liquidaciones | Operaciones administrativas según rol |
 
-1. Abrir la carpeta `android/` con Android Studio (importar como proyecto Gradle).
-2. Gradle 8.9 y las dependencias se descargan automáticamente.
-3. Ejecutar sobre un emulador o dispositivo físico.
-
-La app permite elegir entre dos backends desde el kiosco, el login o el panel:
-**Local** y **Producción**. Las URLs se leen de `android/local.properties`
-(ignorado por Git) y se inyectan en `BuildConfig` desde `app/build.gradle.kts`:
-
-```properties
-backend.local.url=http://10.0.2.2:8080/
-backend.production.url=URL_DEL_BACKEND_EN_PRODUCCION/
-```
-
-- `http://10.0.2.2:8080/` → `localhost` de la máquina vista desde el **emulador**
-  (requiere backend en `localhost:8080`). Para **dispositivo físico**, usar la IP
-  de la red local (p. ej. `http://192.168.1.10:8080/`).
-- Si `backend.production.url` no está configurada, el botón **Producción**
-  aparece deshabilitado. Así la URL del servidor no se publica en GitHub.
-- No agregar `/api/` a las URLs: los endpoints de `ApiService` ya incluyen ese
-  prefijo (por ejemplo `api/auth/login`).
-- La app consume siempre la **API REST**; nunca se conecta a MySQL directamente.
-- Al cambiar de entorno se cierra la sesión, porque el JWT es propio de cada
-  servidor.
-
-### Funcionalidades de la app
-
-- **Kiosco**: marcaje público por código de 4 dígitos (entrada, colaciones y
-  salida), con indicación del siguiente paso del día.
-- **Portal del empleado**: inicio de sesión y consulta de asistencias, permisos y
-  liquidaciones; la sesión JWT se guarda en DataStore y se restaura al reabrir.
-- **Selector de empleado**: los usuarios sin `employee_id` (por ejemplo `admin`)
-  pueden elegir de qué empleado consultar los datos.
-- **Red**: un interceptor de OkHttp envía `Authorization: Bearer <token>` en las
-  peticiones; sin esa cabecera los endpoints de consulta responden 401.
-
-### Notas técnicas Android
-
-- Kotlin 2.0.20, AGP 8.5.2, Compose BOM 2024.09.03, minSdk 24 / targetSdk 35.
-- `usesCleartextTraffic=true` para permitir HTTP en desarrollo; en producción
-  debe usarse HTTPS.
-- Se incluye el wrapper `gradlew` y `gradle/wrapper/gradle-wrapper.properties`
-  (Gradle 8.9).
-- La app no se conecta a MySQL directamente: consume la API REST del backend.
+Las rutas de la app Android ya incluyen el prefijo `/api`, por lo que la URL
+base configurada en el cliente debe terminar solo en `/`.
 
 ---
 
-## Contratos de la API consumidos por el frontend/Android
+## Dominio y reglas de negocio
 
-- `POST /api/auth/login` — iniciar sesión.
-- `GET /api/employees` — listado de empleados (ADMIN/SUPERVISOR; lo usa el
-  selector de la app Android).
-- `POST /api/attendance/mark` (público) — marcar el siguiente paso por código.
-- `POST /api/attendance/status` (público) — consultar estado del día.
-- `GET /api/attendance/employee/{id}` — asistencias de un empleado.
-- `GET /api/permisos/employee/{id}` — permisos de un empleado.
-- `GET /api/payroll/liquidaciones/employee/{employeeId}` — liquidaciones de un empleado.
-- `GET /api/payroll/liquidaciones/{id}/pdf` — PDF de la liquidación, en una sola
-  hoja, con el bloque de firma del trabajador y nombre de archivo
-  `Liquidación_<Empleado>_<Mes>_<Año>.pdf` (UTF-8 vía `filename*`, con fallback
-  ASCII para clientes antiguos).
-- CRUD de empleados, asistencia (admin), permisos (admin/empleado) y
-  liquidaciones (admin) según las reglas de negocio del sistema.
+Entidades principales: empleados, cuentas del sistema y roles, horarios
+semanales y días de horario, asistencias, permisos laborales, licencias
+médicas, horas extra, anticipos, liquidaciones y su detalle, y parámetros del
+sistema.
+
+Reglas implementadas:
+
+- **Licencias médicas**: todos los días solapados se descuentan del sueldo; no
+  existe haber de subsidio a cargo del empleador. Los campos históricos que
+  quedaron en el esquema se mantienen solo por compatibilidad y ya no se usan.
+- **Asistencia**: la vista es maestro/detalle; se lista el personal y se
+  consulta la información de cada persona de forma individual.
+- **Liquidación**: los anticipos se descuentan como una línea normal dentro del
+  bloque de descuentos, sin una sección separada.
+- **Horarios**: las horas se normalizan al guardar para mostrarlas en formato
+  `HH:mm`.
+
+---
+
+## Documentación adicional
+
+| Documento | Contenido |
+|-----------|-----------|
+| [`docs/REQUISITOS_Y_TECNOLOGIAS.md`](docs/REQUISITOS_Y_TECNOLOGIAS.md) | Requisitos funcionales, no funcionales, tecnologías, dominio y alcance |
+| [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md) | Arranque del stack, variables, verificación, respaldos y solución de problemas |
+| [`docs/imagenes/arquitectura.svg`](docs/imagenes/arquitectura.svg) | Diagrama de arquitectura |
+| [`docs/imagenes/modulos.svg`](docs/imagenes/modulos.svg) | Diagrama de módulos |
+| [`docs/imagenes/flujo-marcaje.svg`](docs/imagenes/flujo-marcaje.svg) | Flujo de marcaje |
+
+Toda la configuración con valores reales permanece en archivos locales
+ignorados por Git. Este README y la documentación versionada contienen solo
+nombres de variables y descripción del comportamiento del sistema.

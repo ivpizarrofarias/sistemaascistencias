@@ -41,7 +41,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cl.ipfsoft.backend.app.data.AttendanceResponse
-import cl.ipfsoft.backend.app.data.BackendEnvironment
 import cl.ipfsoft.backend.app.data.EmployeeResponse
 import cl.ipfsoft.backend.app.data.LiquidacionResponse
 import cl.ipfsoft.backend.app.data.PermisoLaboralResponse
@@ -57,7 +56,6 @@ fun HomeScreen(
     state: UiState,
     onLogout: () -> Unit,
     onSelectEmployee: (Long) -> Unit,
-    onSelectEnvironment: (BackendEnvironment) -> Unit,
 ) {
     var tab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Asistencia", "Permisos", "Liquidaciones")
@@ -107,25 +105,6 @@ fun HomeScreen(
                     "Consulta tu información de forma rápida",
                     color = Color.White.copy(alpha = 0.95f),
                     style = MaterialTheme.typography.bodyMedium
-                )
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    "Backend:",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = colors.onSurfaceVariant
-                )
-                EnvironmentSelector(
-                    current = state.environment,
-                    onSelect = onSelectEnvironment,
-                    modifier = Modifier.weight(1f),
                 )
             }
 

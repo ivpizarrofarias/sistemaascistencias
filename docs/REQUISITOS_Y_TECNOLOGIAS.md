@@ -52,9 +52,9 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 - **Docker Engine + Docker Compose** para levantar MySQL, backend y frontend en contenedores
 - API por defecto en `http://localhost:8080`
 - Frontend dev en `http://localhost:4200` con proxy a `/api`
-- Android tiene selector de backend **Local** / **Producción**; la URL local por
-  defecto es `http://10.0.2.2:8080/` y la de producción se configura en
-  `android/local.properties` (no versionado). En ambos casos consume la API REST.
+- Android apunta solo al backend local; la URL se inyecta desde
+  `android/local.properties` (no versionado) y la app consume la API REST sin
+  acceso directo a la base de datos.
 - Con Docker Compose la app queda en `http://localhost:8081` (proxy `/api` al
   backend)
 
@@ -149,7 +149,8 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 
 ## 8. Respaldo de base de datos
 - Archivo: `docs/db/backup_sistema_asis_sin_usuarios_privados.sql`
-- Contiene estructura y datos del esquema `sistema_asis` **excluyendo** los usuarios del sistema **Danitza Flores** e **Iván Pizarro** (tabla `usuarios`).
+- Contiene estructura y datos del esquema de la aplicación **excluyendo** las
+  cuentas privadas del sistema.
 - No incluye credenciales de conexión de la base de datos.
 
 ## 9. Consideraciones para despliegue/producción

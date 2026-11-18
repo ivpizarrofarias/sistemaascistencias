@@ -134,24 +134,23 @@ administrador se inicializa con `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
 ## 4. App Android
 
-La app tiene un selector de entorno (**Local** / **Producción**) en el kiosco,
-el login y el panel. Las URLs se configuran en `android/local.properties`
-(no versionado) y `app/build.gradle.kts` las inyecta en `BuildConfig`:
+La app apunta **únicamente al backend local** del proyecto. La URL se inyecta
+en `BuildConfig` desde `app/build.gradle.kts` y puede sobrescribirse en
+`android/local.properties` (no versionado):
 
 ```properties
-backend.local.url=http://10.0.2.2:8080/
-backend.production.url=URL_DEL_BACKEND_EN_PRODUCCION/
+backend.local.url=<URL_DEL_BACKEND_LOCAL>/
 ```
 
-- `10.0.2.2:8080` es el `localhost` de la máquina visto desde el emulador y
-  coincide con `BACKEND_PORT` del Compose. En un dispositivo físico, usar la IP
-  de la red local (p. ej. `http://192.168.1.10:8080/`).
-- Si no se define `backend.production.url`, la opción **Producción** queda
-  deshabilitada; de ese modo la URL del servidor no se sube a GitHub.
-- No agregar `/api/` a las URLs, porque los endpoints de `ApiService` ya
-  incluyen ese prefijo (por ejemplo `api/auth/login`).
-- En ambos entornos la app consume la API REST, nunca MySQL directamente.
-- Cambiar de entorno cierra la sesión, ya que el JWT es propio de cada servidor.
+- El valor por defecto corresponde al `localhost` de la máquina visto desde el
+  emulador y coincide con `BACKEND_PORT` del Compose.
+- En un dispositivo físico, reemplazarlo por la dirección del backend en la red
+  local.
+- **No existe selector de otro entorno**: la app no contiene configuración ni
+  referencias a ningún otro servidor.
+- No agregar `/api/` a la URL, porque los endpoints de `ApiService` ya incluyen
+  ese prefijo (por ejemplo `api/auth/login`).
+- La app consume la API REST, nunca MySQL directamente.
 
 La app guarda el JWT en DataStore y un interceptor de OkHttp lo envía como
 `Authorization: Bearer <token>` en todas las peticiones. Sin esa cabecera, los
@@ -159,9 +158,8 @@ endpoints de consulta (`/api/employees`, `/api/attendance/employee/*`,
 `/api/permisos/employee/*`, `/api/payroll/liquidaciones/employee/*`) responden
 **401**, aunque el login funcione.
 
-Los usuarios `admin`, `Iván Pizarro` y `Danitza` no tienen `employee_id`
-asociado, así que el panel muestra un selector con los empleados para elegir de
-quién se consultan los datos.
+Las cuentas que no tienen un empleado asociado ven un selector con los
+empleados para elegir de quién se consultan los datos.
 
 Si se usa HTTP, el dispositivo debe permitir tráfico cleartext (la app ya lo
 tiene habilitado para desarrollo). En un entorno expuesto se recomienda HTTPS.

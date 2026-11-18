@@ -18,24 +18,21 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Las URLs de backend se leen de android/local.properties (NO versionado),
-        // así la URL de producción no aparece en GitHub.
+        // URL del backend local. Se puede sobrescribir en android/local.properties
+        // (no versionado), por ejemplo para probar desde un dispositivo físico.
         val localProperties = Properties().apply {
             rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
         }
-        fun backendUrl(key: String, fallback: String): String {
-            val raw = localProperties.getProperty(key, fallback).trim()
-            if (raw.isEmpty()) return ""
-            require(raw.startsWith("http://") || raw.startsWith("https://")) {
-                "$key debe empezar con http:// o https://"
-            }
-            return if (raw.endsWith("/")) raw else "$raw/"
+        val localUrl = localProperties.getProperty("backend.local.url", "http://10.0.2.2:8080/").trim()
+        require(localUrl.startsWith("http://") || localUrl.startsWith("https://")) {
+            "backend.local.url debe empezar con http:// o https://"
         }
-        fun kotlinString(value: String): String =
-            "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
-
-        buildConfigField("String", "LOCAL_BASE_URL", kotlinString(backendUrl("backend.local.url", "http://10.0.2.2:8080/")))
-        buildConfigField("String", "PRODUCTION_BASE_URL", kotlinString(backendUrl("backend.production.url", "")))
+        val finalUrl = if (localUrl.endsWith("/")) localUrl else "$localUrl/"
+        buildConfigField(
+            "String",
+            "LOCAL_BASE_URL",
+            "\"" + finalUrl.replace("\\", "\\\\").replace("\"", "\\\"") + "\"",
+        )
     }
 
     buildTypes {
