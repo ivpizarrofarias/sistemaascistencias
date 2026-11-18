@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cl.ipfsoft.backend.app.data.BackendEnvironment
 import cl.ipfsoft.backend.app.data.MarkResponse
 import cl.ipfsoft.backend.app.ui.UiState
 
@@ -54,6 +55,7 @@ fun MarkScreen(
     state: UiState,
     onMark: (String) -> Unit,
     onOpenLogin: () -> Unit,
+    onSelectEnvironment: (BackendEnvironment) -> Unit,
 ) {
     var codigo by remember { mutableStateOf("") }
     val colors = MaterialTheme.colorScheme
@@ -114,6 +116,18 @@ fun MarkScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
                 ) {
                     Column(Modifier.padding(22.dp)) {
+                        Text(
+                            "Entorno del backend",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = colors.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        EnvironmentSelector(
+                            current = state.environment,
+                            onSelect = onSelectEnvironment,
+                        )
+                        Spacer(Modifier.height(20.dp))
+
                         Text(
                             "Ingresa tu código de marcaje",
                             style = MaterialTheme.typography.titleLarge,

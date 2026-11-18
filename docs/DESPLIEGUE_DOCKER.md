@@ -134,19 +134,24 @@ administrador se inicializa con `ADMIN_USERNAME` / `ADMIN_PASSWORD`.
 
 ## 4. App Android
 
-El repo queda configurado para desarrollo local. La URL base está en
-`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt`:
+La app tiene un selector de entorno (**Local** / **Producción**) en el kiosco,
+el login y el panel. Las URLs se configuran en `android/local.properties`
+(no versionado) y `app/build.gradle.kts` las inyecta en `BuildConfig`:
 
-```kotlin
-private const val BASE_URL = "http://10.0.2.2:8080/"
+```properties
+backend.local.url=http://10.0.2.2:8080/
+backend.production.url=URL_DEL_BACKEND_EN_PRODUCCION/
 ```
 
 - `10.0.2.2:8080` es el `localhost` de la máquina visto desde el emulador y
-  coincide con `BACKEND_PORT` del Compose.
-- En un dispositivo físico, cambiar por la IP de la red local
-  (p. ej. `http://192.168.1.10:8080/`).
-- No agregar `/api/` a `BASE_URL`, porque los endpoints de `ApiService` ya
+  coincide con `BACKEND_PORT` del Compose. En un dispositivo físico, usar la IP
+  de la red local (p. ej. `http://192.168.1.10:8080/`).
+- Si no se define `backend.production.url`, la opción **Producción** queda
+  deshabilitada; de ese modo la URL del servidor no se sube a GitHub.
+- No agregar `/api/` a las URLs, porque los endpoints de `ApiService` ya
   incluyen ese prefijo (por ejemplo `api/auth/login`).
+- En ambos entornos la app consume la API REST, nunca MySQL directamente.
+- Cambiar de entorno cierra la sesión, ya que el JWT es propio de cada servidor.
 
 La app guarda el JWT en DataStore y un interceptor de OkHttp lo envía como
 `Authorization: Bearer <token>` en todas las peticiones. Sin esa cabecera, los

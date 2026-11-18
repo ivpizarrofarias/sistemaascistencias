@@ -14,7 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
-import cl.ipfsoft.backend.app.data.RetrofitClient
+import cl.ipfsoft.backend.app.data.EnvironmentStore
 import cl.ipfsoft.backend.app.data.TokenStore
 import cl.ipfsoft.backend.app.ui.MainViewModel
 import cl.ipfsoft.backend.app.ui.screens.HomeScreen
@@ -31,8 +31,8 @@ class MainActivity : ComponentActivity() {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
                     return MainViewModel(
-                        api = RetrofitClient.instance,
                         tokenStore = TokenStore(applicationContext),
+                        environmentStore = EnvironmentStore(applicationContext),
                     ) as T
                 }
             },
@@ -70,6 +70,7 @@ private fun AppRoot(viewModel: MainViewModel) {
                         state = state,
                         onLogout = { viewModel.logout() },
                         onSelectEmployee = { viewModel.selectEmployee(it) },
+                        onSelectEnvironment = { viewModel.setEnvironment(it) },
                     )
                 }
                 state.showLogin -> {
@@ -77,6 +78,7 @@ private fun AppRoot(viewModel: MainViewModel) {
                         state = state,
                         onLogin = { u, p -> viewModel.login(u, p) },
                         onBack = { viewModel.openKiosk() },
+                        onSelectEnvironment = { viewModel.setEnvironment(it) },
                     )
                 }
                 else -> {
@@ -84,6 +86,7 @@ private fun AppRoot(viewModel: MainViewModel) {
                         state = state,
                         onMark = { viewModel.mark(it) },
                         onOpenLogin = { viewModel.openLogin() },
+                        onSelectEnvironment = { viewModel.setEnvironment(it) },
                     )
                 }
             }

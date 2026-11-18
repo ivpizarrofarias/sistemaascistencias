@@ -1,3 +1,5 @@
+import java.util.Properties
+
 // Configuración del módulo "app" (aplicación Android).
 plugins {
     alias(libs.plugins.android.application)
@@ -15,6 +17,25 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+
+        // Las URLs de backend se leen de android/local.properties (NO versionado),
+        // así la URL de producción no aparece en GitHub.
+        val localProperties = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+        }
+        fun backendUrl(key: String, fallback: String): String {
+            val raw = localProperties.getProperty(key, fallback).trim()
+            if (raw.isEmpty()) return ""
+            require(raw.startsWith("http://") || raw.startsWith("https://")) {
+                "$key debe empezar con http:// o https://"
+            }
+            return if (raw.endsWith("/")) raw else "$raw/"
+        }
+        fun kotlinString(value: String): String =
+            "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+
+        buildConfigField("String", "LOCAL_BASE_URL", kotlinString(backendUrl("backend.local.url", "http://10.0.2.2:8080/")))
+        buildConfigField("String", "PRODUCTION_BASE_URL", kotlinString(backendUrl("backend.production.url", "")))
     }
 
     buildTypes {
@@ -35,6 +56,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

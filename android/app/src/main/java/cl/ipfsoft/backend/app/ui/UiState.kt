@@ -1,6 +1,7 @@
 package cl.ipfsoft.backend.app.ui
 
 import cl.ipfsoft.backend.app.data.AttendanceResponse
+import cl.ipfsoft.backend.app.data.BackendEnvironment
 import cl.ipfsoft.backend.app.data.EmployeeResponse
 import cl.ipfsoft.backend.app.data.LiquidacionResponse
 import cl.ipfsoft.backend.app.data.MarkResponse
@@ -8,6 +9,8 @@ import cl.ipfsoft.backend.app.data.PermisoLaboralResponse
 
 /** Estado de UI compartido por las pantallas de la app. */
 data class UiState(
+    /** Backend al que apunta la app (local o producción). */
+    val environment: BackendEnvironment = BackendEnvironment.LOCAL,
     /** true muestra el portal del empleado; false muestra el kiosco de marcaje. */
     val showLogin: Boolean = false,
     val isAuthenticated: Boolean = false,

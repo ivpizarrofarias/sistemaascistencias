@@ -73,8 +73,8 @@ entrada registrada y el siguiente paso indicado por la app.*
 - MySQL del sistema: `localhost:3306`
 - MySQL en Docker Compose: `localhost:3307` (o `MYSQL_HOST_PORT`)
 - Backend expuesto por Compose: `http://localhost:8080` (o `BACKEND_PORT`)
-- **Android (configuración por defecto en el repo): `http://10.0.2.2:8080/`**
-  (el emulador ve el `localhost` del host con esa IP).
+- **Android**: selector en la app entre backend **Local** (`http://10.0.2.2:8080/`
+  en el emulador) y **Producción** (URL configurada solo en `android/local.properties`).
 - Dispositivo físico → backend del host: usar la IP de la red local
   (p. ej. `http://192.168.1.10:8080/`).
 - Con Docker Compose: `http://localhost:8081` (proxy `/api` al backend).
@@ -270,20 +270,25 @@ El proyecto Android está en `android/` y se abre y compila desde
 2. Gradle 8.9 y las dependencias se descargan automáticamente.
 3. Ejecutar sobre un emulador o dispositivo físico.
 
-La base URL de la API está en
-`android/app/src/main/java/cl/ipfsoft/backend/app/data/RetrofitClient.kt`.
-**El repo queda configurado para el entorno local**:
+La app permite elegir entre dos backends desde el kiosco, el login o el panel:
+**Local** y **Producción**. Las URLs se leen de `android/local.properties`
+(ignorado por Git) y se inyectan en `BuildConfig` desde `app/build.gradle.kts`:
 
-```kotlin
-private const val BASE_URL = "http://10.0.2.2:8080/"
+```properties
+backend.local.url=http://10.0.2.2:8080/
+backend.production.url=URL_DEL_BACKEND_EN_PRODUCCION/
 ```
 
 - `http://10.0.2.2:8080/` → `localhost` de la máquina vista desde el **emulador**
-  (valor por defecto; requiere backend en `localhost:8080`).
-- Para **dispositivo físico**, cambiar por la IP local de la máquina
-  (p. ej. `http://192.168.1.10:8080/`).
-No agregar `/api/` a `BASE_URL`: los endpoints de `ApiService` ya incluyen ese
-prefijo (por ejemplo `api/auth/login`).
+  (requiere backend en `localhost:8080`). Para **dispositivo físico**, usar la IP
+  de la red local (p. ej. `http://192.168.1.10:8080/`).
+- Si `backend.production.url` no está configurada, el botón **Producción**
+  aparece deshabilitado. Así la URL del servidor no se publica en GitHub.
+- No agregar `/api/` a las URLs: los endpoints de `ApiService` ya incluyen ese
+  prefijo (por ejemplo `api/auth/login`).
+- La app consume siempre la **API REST**; nunca se conecta a MySQL directamente.
+- Al cambiar de entorno se cierra la sesión, porque el JWT es propio de cada
+  servidor.
 
 ### Funcionalidades de la app
 

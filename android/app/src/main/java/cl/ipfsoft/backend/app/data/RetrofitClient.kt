@@ -1,5 +1,6 @@
 package cl.ipfsoft.backend.app.data
 
+import cl.ipfsoft.backend.app.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.logging.HttpLoggingInterceptor
@@ -8,19 +9,31 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 /**
+ * Backends que puede usar la app. En ambos casos se consume la API REST: la app
+ * nunca se conecta a MySQL directamente.
+ *
+ * Las URLs se inyectan desde android/local.properties en tiempo de compilación,
+ * por lo que la URL de producción no se sube a GitHub. Si no está configurada,
+ * la opción aparece deshabilitada en la app.
+ */
+enum class BackendEnvironment(val label: String, val baseUrl: String) {
+    LOCAL("Local", BuildConfig.LOCAL_BASE_URL),
+    PRODUCCION("Producción", BuildConfig.PRODUCTION_BASE_URL),
+    ;
+
+    val isConfigured: Boolean
+        get() = baseUrl.startsWith("http://") || baseUrl.startsWith("https://")
+}
+
+/**
  * Cliente HTTP de la app mediante Retrofit/OkHttp.
  *
- * La base URL apunta al backend LOCAL por defecto (el emulador ve el host con
- * 10.0.2.2). Las rutas de ApiService ya incluyen el prefijo "api/", por eso
- * BASE_URL termina solo en "/". Para un dispositivo físico cambiar por la IP
- * de la red local (p. ej. http://192.168.1.10:8080/).
+ * Las rutas de ApiService ya incluyen el prefijo "api/", por eso las URLs base
+ * terminan solo en "/". Se crea un cliente por entorno y se reutiliza.
  */
 object RetrofitClient {
 
-    // Backend local: http://10.0.2.2:8080/ es "localhost" desde el emulador.
-    private const val BASE_URL = "http://10.0.2.2:8080/"
-
-    // No registrar cuerpos/cabeceras en producción para evitar exponer tokens o datos sensibles.
+    // No registrar cuerpos/cabeceras para evitar exponer tokens o datos sensibles.
     private val logging = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.NONE
     }
@@ -48,12 +61,20 @@ object RetrofitClient {
         .readTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    val instance: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttp)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-            .create(ApiService::class.java)
+    private val instances = mutableMapOf<BackendEnvironment, ApiService>()
+
+    /** Devuelve el cliente API del entorno indicado (local o producción). */
+    fun api(environment: BackendEnvironment): ApiService = synchronized(instances) {
+        instances.getOrPut(environment) {
+            require(environment.isConfigured) {
+                "Falta configurar la URL del backend ${environment.label} en android/local.properties"
+            }
+            Retrofit.Builder()
+                .baseUrl(environment.baseUrl)
+                .client(okHttp)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+                .create(ApiService::class.java)
+        }
     }
 }

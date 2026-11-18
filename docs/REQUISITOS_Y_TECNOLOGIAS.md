@@ -52,8 +52,9 @@ Sistema integral para gestión de asistencia, horarios, permisos laborales y rem
 - **Docker Engine + Docker Compose** para levantar MySQL, backend y frontend en contenedores
 - API por defecto en `http://localhost:8080`
 - Frontend dev en `http://localhost:4200` con proxy a `/api`
-- Android emulador usa `http://10.0.2.2:8080/` para acceder al backend local
-  (valor por defecto en `RetrofitClient.kt`)
+- Android tiene selector de backend **Local** / **Producción**; la URL local por
+  defecto es `http://10.0.2.2:8080/` y la de producción se configura en
+  `android/local.properties` (no versionado). En ambos casos consume la API REST.
 - Con Docker Compose la app queda en `http://localhost:8081` (proxy `/api` al
   backend)
 

@@ -3,8 +3,11 @@ package cl.ipfsoft.backend.app.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.ipfsoft.backend.app.data.ApiService
+import cl.ipfsoft.backend.app.data.BackendEnvironment
+import cl.ipfsoft.backend.app.data.EnvironmentStore
 import cl.ipfsoft.backend.app.data.LoginRequest
 import cl.ipfsoft.backend.app.data.MarkRequest
+import cl.ipfsoft.backend.app.data.RetrofitClient
 import cl.ipfsoft.backend.app.data.TokenHolder
 import cl.ipfsoft.backend.app.data.TokenStore
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,16 +15,23 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(
-    private val api: ApiService,
     private val tokenStore: TokenStore,
+    private val environmentStore: EnvironmentStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
-    /** Intenta restaurar la sesión guardada localmente al iniciar la app. */
+    private var currentEnvironment: BackendEnvironment = BackendEnvironment.LOCAL
+
+    /** Cliente del entorno activo; se resuelve en cada llamada. */
+    private val api: ApiService get() = RetrofitClient.api(currentEnvironment)
+
+    /** Intenta restaurar el entorno y la sesión guardados al iniciar la app. */
     fun restoreSession() {
         viewModelScope.launch {
+            currentEnvironment = environmentStore.current()
+            _state.value = _state.value.copy(environment = currentEnvironment)
             val session = tokenStore.loadSession() ?: return@launch
             // El interceptor necesita el token en memoria antes de cualquier llamada.
             TokenHolder.set(session.token)
@@ -45,6 +55,21 @@ class MainViewModel(
     /** Vuelve al kiosco de marcaje. */
     fun openKiosk() {
         _state.value = _state.value.copy(showLogin = false, error = null)
+    }
+
+    /**
+     * Cambia entre backend local y de producción. El token pertenece a un
+     * servidor concreto, por eso se cierra la sesión al cambiar de entorno.
+     */
+    fun setEnvironment(environment: BackendEnvironment) {
+        if (!environment.isConfigured || environment == currentEnvironment) return
+        viewModelScope.launch {
+            tokenStore.clear()
+            TokenHolder.clear()
+            currentEnvironment = environment
+            environmentStore.save(environment)
+            _state.value = UiState(environment = environment)
+        }
     }
 
     /** Inicia sesión con usuario y contraseña. */
@@ -77,7 +102,7 @@ class MainViewModel(
         viewModelScope.launch {
             tokenStore.clear()
             TokenHolder.clear()
-            _state.value = UiState()
+            _state.value = UiState(environment = currentEnvironment)
         }
     }
 
