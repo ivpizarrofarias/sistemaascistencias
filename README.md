@@ -15,9 +15,10 @@ El proyecto está dividido en tres módulos que se comunican por una **API REST*
 | `android/` | Kotlin + Jetpack Compose | Kiosco de marcaje y portal del empleado |
 
 > Los clientes (web y Android) **nunca acceden a la base de datos directamente**:
-> solo consumen la API. Las credenciales y parámetros sensibles se entregan
-> mediante variables de entorno y archivos locales no versionados; este
-> documento no incluye valores de conexión, usuarios ni claves.
+> solo consumen la API. Los parámetros de conexión se entregan mediante variables
+> de entorno y archivos locales no versionados; este documento no incluye valores
+> de conexión a la base de datos ni direcciones de otros servidores. Las
+> credenciales iniciales de acceso a la web se indican en su propia sección.
 
 ---
 
@@ -31,10 +32,11 @@ El proyecto está dividido en tres módulos que se comunican por una **API REST*
 6. [Tecnologías utilizadas](#tecnologías-utilizadas)
 7. [Estructura del repositorio](#estructura-del-repositorio)
 8. [Puesta en marcha con Docker Compose](#puesta-en-marcha-con-docker-compose)
-9. [Desarrollo de cada módulo](#desarrollo-de-cada-módulo)
-10. [Contratos de la API](#contratos-de-la-api)
-11. [Dominio y reglas de negocio](#dominio-y-reglas-de-negocio)
-12. [Documentación adicional](#documentación-adicional)
+9. [Acceso a la página web](#acceso-a-la-página-web)
+10. [Desarrollo de cada módulo](#desarrollo-de-cada-módulo)
+11. [Contratos de la API](#contratos-de-la-api)
+12. [Dominio y reglas de negocio](#dominio-y-reglas-de-negocio)
+13. [Documentación adicional](#documentación-adicional)
 
 ---
 
@@ -351,6 +353,22 @@ aplicación queda disponible en la URL HTTP configurada en `HTTP_PORT`.
 
 La guía completa, incluyendo respaldos y solución de problemas, está en
 [`docs/DESPLIEGUE_DOCKER.md`](docs/DESPLIEGUE_DOCKER.md).
+
+---
+
+## Acceso a la página web
+
+Para ingresar al panel web se usa el usuario y la contraseña iniciales que
+define el proyecto:
+
+| Campo | Valor |
+|-------|-------|
+| Usuario | `admin` |
+| Contraseña | `admin123` |
+
+Son los valores por defecto del código. Si se quiere otro usuario o otra
+contraseña, se deben definir `ADMIN_USERNAME` y `ADMIN_PASSWORD` en el archivo
+local `.env` antes de levantar el stack; ese archivo no se sube al repositorio.
 
 ---
 
